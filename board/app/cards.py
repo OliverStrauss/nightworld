@@ -71,6 +71,11 @@ def _check_deps(conn: sqlite3.Connection, card_id: int | None, deps: list[int]) 
         )
 
 
+def _check_epic(conn: sqlite3.Connection, epic_id: int | None) -> None:
+    if epic_id is not None and conn.execute("SELECT 1 FROM epics WHERE id = ?", (epic_id,)).fetchone() is None:
+        raise HTTPException(status_code=422, detail=f"epicId: no epic {epic_id}")
+
+
 def _set_deps(conn: sqlite3.Connection, card_id: int, deps: list[int]) -> None:
     conn.execute("DELETE FROM card_deps WHERE cardId = ?", (card_id,))
     conn.executemany(
@@ -107,17 +112,19 @@ def create_card(conn: sqlite3.Connection, actor: str, fields: dict) -> dict:
         raise HTTPException(status_code=403, detail="groomer may only create cards in backlog")
     deps = fields.get("dependsOn") or []
     _check_deps(conn, None, deps)
+    _check_epic(conn, fields.get("epicId"))
 
     stamp = now()
     cur = conn.execute(
-        """INSERT INTO cards (title, type, size, effort, status, position, goal, criteria, notes,
-                              branch, prUrl, createdAt, updatedAt)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        """INSERT INTO cards (title, type, size, effort, epicId, status, position, goal, criteria,
+                              notes, branch, prUrl, createdAt, updatedAt)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
             fields["title"],
             fields["type"],
             fields["size"],
             fields.get("effort") or EFFORT_FROM_SIZE[fields["size"]],
+            fields.get("epicId"),
             status,
             _column_size(conn, status) + 1,
             fields.get("goal") or "",
@@ -150,6 +157,8 @@ def update_card(conn: sqlite3.Connection, actor: str, card_id: int, changes: dic
             raise HTTPException(status_code=403, detail="builder may only set status to verifying")
 
     before = to_json(conn, row)
+    if "epicId" in changes:
+        _check_epic(conn, changes["epicId"])
     if "dependsOn" in changes:
         _check_deps(conn, card_id, changes["dependsOn"])
         _set_deps(conn, card_id, changes["dependsOn"])
@@ -183,18 +192,109 @@ def update_card(conn: sqlite3.Connection, actor: str, card_id: int, changes: dic
 
 
 def next_card(conn: sqlite3.Connection) -> dict | None:
-    """Top `ready` card whose dependencies are all `done`.
+    """Top `ready` card whose dependencies are all met.
 
-    The epic rule (a same-epic dependency with `mergedToEpic` also counts as met) comes with
-    epics in phase 5.
+    A dependency is met when it's `done`, or when it's in the same epic and its PR has been
+    merged into the epic branch (`mergedToEpic`).
     """
     row = conn.execute(
         """SELECT * FROM cards c
            WHERE c.status = 'ready'
              AND NOT EXISTS (
                SELECT 1 FROM card_deps d JOIN cards dep ON dep.id = d.dependsOn
-               WHERE d.cardId = c.id AND dep.status != 'done')
+               WHERE d.cardId = c.id
+                 AND dep.status != 'done'
+                 AND NOT (dep.mergedToEpic = 1 AND dep.epicId IS NOT NULL AND dep.epicId IS c.epicId))
            ORDER BY c.position
            LIMIT 1"""
     ).fetchone()
     return to_json(conn, row) if row else None
+
+
+# ---- night shift: claim, review, events, comments
+
+
+def claim(conn: sqlite3.Connection, actor: str, card_id: int, branch: str) -> dict:
+    row = get_row(conn, card_id)
+    if row["status"] != "ready":
+        raise HTTPException(status_code=409, detail=f"Card {card_id} is {row['status']}, not ready")
+    _move(conn, row, "building", None)
+    conn.execute(
+        "UPDATE cards SET branch = ?, attempts = attempts + 1, updatedAt = ? WHERE id = ?",
+        (branch, now(), card_id),
+    )
+    card = to_json(conn, get_row(conn, card_id))
+    log_activity(
+        conn, actor, "card.claimed", card_id, f"Claimed on {branch} (attempt {card['attempts']})",
+        {"branch": branch, "attempts": card["attempts"]},
+    )
+    conn.commit()
+    return card
+
+
+REVIEWABLE = ("building", "verifying")
+
+
+def review(conn: sqlite3.Connection, actor: str, card_id: int, verdict: str, notes: str, pr_url: str | None) -> dict:
+    """Apply the review rules in README.md."""
+    row = get_row(conn, card_id)
+    if row["status"] not in REVIEWABLE:
+        raise HTTPException(status_code=409, detail=f"Card {card_id} is {row['status']}, nothing to review")
+
+    fails = row["consecutiveFails"]
+    if verdict == "PASS":
+        fails, status, position = 0, "review", None
+    elif verdict == "FAIL":
+        fails += 1
+        status, position = ("blocked", None) if fails >= 2 else ("ready", 1)
+    else:  # BLOCKED
+        status, position = "blocked", None
+
+    _move(conn, row, status, position)
+    conn.execute(
+        "UPDATE cards SET consecutiveFails = ?, lastReview = ?, prUrl = COALESCE(?, prUrl), updatedAt = ? WHERE id = ?",
+        (fails, notes, pr_url, now(), card_id),
+    )
+    card = to_json(conn, get_row(conn, card_id))
+    log_activity(
+        conn, actor, "card.reviewed", card_id, f"{verdict} → {status}",
+        {"verdict": verdict, "status": status, "consecutiveFails": fails, "notes": notes},
+    )
+    conn.commit()
+    return card
+
+
+def add_event(conn: sqlite3.Connection, actor: str, card_id: int, type: str, message: str) -> dict:
+    get_row(conn, card_id)
+    log_activity(conn, actor, type, card_id, message)
+    conn.commit()
+    return {"cardId": card_id, "actor": actor, "type": type, "message": message}
+
+
+def add_comment(conn: sqlite3.Connection, actor: str, card_id: int, body: str) -> dict:
+    get_row(conn, card_id)
+    stamp = now()
+    cur = conn.execute(
+        "INSERT INTO comments (cardId, author, body, createdAt) VALUES (?, ?, ?, ?)",
+        (card_id, actor, body, stamp),
+    )
+    log_activity(conn, actor, "comment.added", card_id, body[:120], {"commentId": cur.lastrowid})
+    conn.commit()
+    return {"id": cur.lastrowid, "cardId": card_id, "author": actor, "body": body, "createdAt": stamp}
+
+
+def list_comments(conn: sqlite3.Connection, card_id: int) -> list[dict]:
+    rows = conn.execute("SELECT * FROM comments WHERE cardId = ? ORDER BY id", (card_id,))
+    return [dict(r) for r in rows]
+
+
+def list_activity(conn: sqlite3.Connection, since: str | None = None, card_id: int | None = None) -> list[dict]:
+    sql, args = "SELECT * FROM activity WHERE 1 = 1", []
+    if since:
+        sql += " AND createdAt >= ?"
+        args.append(since)
+    if card_id is not None:
+        sql += " AND cardId = ?"
+        args.append(card_id)
+    rows = conn.execute(sql + " ORDER BY id", args).fetchall()
+    return [{**dict(r), "data": json.loads(r["data"])} for r in rows]
