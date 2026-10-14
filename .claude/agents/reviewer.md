@@ -24,7 +24,11 @@ Check, in this order:
    the thing the card added not being visible, obviously wrong scale (a 10 m tall crate).
 5. **Tests**: do the new tests actually assert the behaviour, or do they just run without
    asserting? A test that can't fail doesn't count.
-6. **Design fit**: does anything contradict `docs/design.md`?
+6. **Design and world fit**: does anything contradict `docs/design.md` or `docs/world.md`?
+   Check the card's World fit line against the data: enemy levels inside the zone's tier band,
+   IDs and names follow the naming rules, existing IDs reused instead of near-duplicates
+   (`slime-goo` next to `slime-gel`). A new fact that isn't listed under "Canon proposals" in
+   the PR is an issue, not a FAIL.
 
 Output exactly this, and nothing else:
 

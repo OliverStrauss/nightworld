@@ -4,7 +4,7 @@ This repo is a 3D open-world RPG in Unity, built mostly by agents: one task card
 the Pi, plus tasks Oliver hands you directly. A human (Oliver) reviews every PR. Your job is to
 leave him a small, correct, easy-to-review change — not a big impressive one.
 
-Read `docs/design.md` and `docs/architecture.md` before your first change in a session,
+Read `docs/design.md`, `docs/world.md` and `docs/architecture.md` before your first change in a session,
 and `docs/content-yaml.md` before adding or editing any content asset.
 
 ## The repo at a glance
@@ -15,6 +15,7 @@ and `docs/content-yaml.md` before adding or editing any content asset.
 | `game/Assets/_Project/` | Everything we own: scripts, data, prefabs, tests |
 | `game/Assets/ThirdParty/` | Asset packs (Kenney etc.). Read-only for agents |
 | `docs/design.md` | The game: pitch, pillars, core loop, progression, art direction |
+| `docs/world.md` | The world's canon: map layout, danger rings, what exists, naming. Oliver owns it |
 | `docs/architecture.md` | Code layout, assemblies, why zones are data |
 | `docs/content-yaml.md` | How to write `.asset` + `.meta` files by hand |
 | `docs/task-cards.md` | Card template and sizing (S or M only) |

@@ -31,7 +31,7 @@ PROMPT = """Split this NightWorld epic into draft task cards.
 Epic: {title} (slug `{slug}`, built on branch `{branch}`)
 Pitch: {pitch}
 {existing}
-Read CLAUDE.md, docs/design.md, docs/architecture.md and docs/task-cards.md first, and look at
+Read CLAUDE.md, docs/design.md, docs/world.md, docs/architecture.md and docs/task-cards.md first, and look at
 what already exists in game/Assets/_Project so the cards build on real systems.
 
 Rules:
@@ -39,6 +39,10 @@ Rules:
 - Systems before content. Every acceptance criterion is checkable by a test, the validator or a
   screenshot. Name the IDs (kebab-case) you want created.
 - Keep the game's vibe: fun beats realistic, light and a bit silly.
+- Fit the world in docs/world.md. Decide the epic's World fit once (where, tier and levels,
+  existing IDs it reuses, what it adds to canon) and start every card's notes with
+  "World fit: ..." so all cards agree. If the pitch can't say where or which tier, pick the
+  most sensible ring and say so in the first card's notes.
 - `dependsOn` lists the 1-based numbers of earlier cards in YOUR list that must be built first.
 
 Do not change any files and do not call the board API. Reply with only a JSON object, no prose:
