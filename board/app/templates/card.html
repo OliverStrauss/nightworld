@@ -35,7 +35,7 @@
   <form class="move" method="post" action="/cards/{{ card.id }}/move">
     <label>Move to
       <select name="status">
-        {% for s, name in COLUMNS %}<option value="{{ s }}" {{ "selected" if s == card.status }}>{{ name }}</option>{% endfor %}
+        {% for s, name in STAGES %}<option value="{{ s }}" {{ "selected" if s == STAGE_OF[card.status] }}>{{ name }}</option>{% endfor %}
       </select>
     </label>
     <button>Move</button>

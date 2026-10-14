@@ -9,7 +9,7 @@ from urllib.parse import quote
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel, ValidationError
+from pydantic import ValidationError
 
 from . import cards, epics, night
 from .api import CardCreate, CardPatch, EpicCreate, EpicPatch, NightSettings, get_conn
@@ -18,16 +18,22 @@ from .auth import COOKIE, SESSION_DAYS, check_password, make_session, session_ac
 router = APIRouter()
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 
-COLUMNS = [
-    ("backlog", "Backlog"),
-    ("ready", "Ready"),
-    ("building", "Building"),
-    ("verifying", "Verifying"),
-    ("review", "Your review"),
-    ("done", "Done"),
-    ("blocked", "Blocked"),
-]
-templates.env.globals.update(COLUMNS=COLUMNS, STATUS_NAMES=dict(COLUMNS), POINTS=night.POINTS)
+# Every status the runner uses, in the words the card page shows.
+STATUS_NAMES = {
+    "backlog": "Backlog",
+    "ready": "Ready",
+    "building": "Building now",
+    "verifying": "Checking the PR",
+    "review": "Built, PR to merge",
+    "done": "Done",
+    "blocked": "Stuck",
+}
+# Oliver sees three stages; the runner's in-between statuses show as badges inside them.
+STAGES = [("backlog", "Backlog"), ("ready", "Ready"), ("done", "Done")]
+STAGE_OF = {"backlog": "backlog", "ready": "ready", "building": "ready", "verifying": "ready",
+            "blocked": "ready", "review": "done", "done": "done"}
+DONE_SHOWN = 20
+templates.env.globals.update(STAGES=STAGES, STAGE_OF=STAGE_OF, STATUS_NAMES=STATUS_NAMES, POINTS=night.POINTS)
 # "2026-10-14T18:45:20Z" → "Oct 14 18:45" (UTC, like the stored timestamps)
 templates.env.filters["when"] = lambda iso: datetime.fromisoformat(iso.replace("Z", "+00:00")).strftime("%b %d %H:%M")
 
@@ -88,17 +94,24 @@ def logout():
 @router.get("/")
 def board(request: Request, actor: str = Depends(login_required), conn: sqlite3.Connection = Depends(get_conn)):
     all_cards = cards.list_cards(conn)
-    by_status = {status: [c for c in all_cards if c["status"] == status] for status, _ in COLUMNS}
-    epic_slugs = {e["id"]: e["slug"] for e in epics.list_epics(conn)}
+
+    def having(*statuses):
+        return [c for c in all_cards if c["status"] in statuses]
+
+    finished = sorted(having("done"), key=lambda c: c["updatedAt"], reverse=True)
     return page(
-        request, "board.html", by_status=by_status, epic_slugs=epic_slugs,
-        night=night.get(conn), next_card=cards.next_card(conn),
+        request, "board.html",
+        backlog=having("backlog"),
+        working=having("building", "verifying"),
+        queue=having("ready"),
+        stuck=having("blocked"),
+        to_merge=having("review"),
+        done=finished[:DONE_SHOWN],
+        done_total=len(finished),
+        epic_slugs={e["id"]: e["slug"] for e in epics.list_epics(conn)},
+        night=night.get(conn),
+        next_card=cards.next_card(conn),
     )
-
-
-class Move(BaseModel):
-    status: str
-    position: int
 
 
 @router.post("/cards/{card_id}/move")
@@ -114,10 +127,14 @@ async def move(
             return JSONResponse({"detail": error_text(exc)}, status_code=getattr(exc, "status_code", 422))
         return card
     form = await request.form()
-    try:
-        cards.update_card(conn, actor, card_id, CardPatch(status=form.get("status")).model_dump(exclude_unset=True))
-    except ValidationError:
-        pass  # unknown status from a hand-made form: leave the card alone
+    current = cards.get_row(conn, card_id)["status"]
+    # "Ready" on a card that's building just means "leave it be"; Ready on a stuck card unblocks it,
+    # and Done on a built card means its PR is merged.
+    if not (form.get("status") == "ready" and current in ("building", "verifying")):
+        try:
+            cards.update_card(conn, actor, card_id, CardPatch(status=form.get("status")).model_dump(exclude_unset=True))
+        except ValidationError:
+            pass  # unknown status from a hand-made form: leave the card alone
     return back_to(f"/cards/{card_id}")
 
 

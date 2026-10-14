@@ -66,8 +66,26 @@ def test_logout(browser):
 def test_board_shows_cards_in_their_columns(browser, seeded):
     html = browser.get("/").text
     assert "Bog slimes" in html
-    assert re.search(r'data-status="ready">\s*<a class="tile', html)
-    assert "Next up" in html
+    assert re.search(r'data-status="ready" data-sort="true">\s*<a class="tile', html)
+    assert "Next to build" in html
+
+
+def test_board_has_three_stages_with_runner_states_inside(browser, client, make_card):
+    make_card(title="idea")
+    make_card(title="queued", status="ready")
+    make_card(title="cooking", status="building")
+    make_card(title="wedged", status="blocked")
+    make_card(title="merge me", status="review")
+    make_card(title="shipped", status="done")
+    html = browser.get("/").text
+    assert html.count('class="stage ') == 3
+    backlog, ready, done = (html.index(f"stage-{s}") for s in ("backlog", "ready", "done"))
+    assert backlog < html.index("idea") < ready
+    for title in ("queued", "cooking", "wedged"):
+        assert ready < html.index(title) < done
+    for title in ("merge me", "shipped"):
+        assert done < html.index(title)
+    assert "Building now" in html and "Stuck, needs you" in html and "Built, PR to merge" in html
 
 
 def test_card_page_shows_details(browser, seeded):
@@ -165,6 +183,21 @@ def test_move_form_on_card_page(browser, client, make_card):
     make_card(status="review")
     r = browser.post("/cards/1/move", data={"status": "done"}, follow_redirects=False)
     assert r.status_code == 303 and card(client, 1)["status"] == "done"
+
+
+def test_move_form_unblocks_but_leaves_building_cards_alone(browser, client, make_card):
+    make_card(status="blocked")
+    make_card(status="building")
+    browser.post("/cards/1/move", data={"status": "ready"})
+    browser.post("/cards/2/move", data={"status": "ready"})
+    assert card(client, 1)["status"] == "ready"
+    assert card(client, 2)["status"] == "building"
+
+
+def test_drop_into_done_without_position(browser, client, make_card):
+    make_card(status="ready")
+    assert browser.post("/cards/1/move", json={"status": "done"}).status_code == 200
+    assert card(client, 1)["status"] == "done"
 
 
 def test_move_needs_login(client, make_card):

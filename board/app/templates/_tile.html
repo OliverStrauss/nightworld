@@ -1,4 +1,5 @@
-<a class="tile type-{{ c.type }}" href="/cards/{{ c.id }}" data-id="{{ c.id }}">
+<a class="tile type-{{ c.type }} status-{{ c.status }}{{ ' fixed' if fixed }}" href="/cards/{{ c.id }}" data-id="{{ c.id }}">
+  {% if c.status not in ("backlog", "ready", "done") %}<span class="badge">{{ STATUS_NAMES[c.status] }}</span>{% endif %}
   <span class="tile-title">{{ c.title }}</span>
   <span class="chips">
     <span class="chip">#{{ c.id }}</span>

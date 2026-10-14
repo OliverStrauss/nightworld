@@ -20,8 +20,8 @@
     </label>
   </div>
   {% if not card %}
-  <label>Column
-    <select name="status">{% for s, name in COLUMNS %}<option value="{{ s }}" {{ "selected" if form.status == s }}>{{ name }}</option>{% endfor %}</select>
+  <label>Stage
+    <select name="status">{% for s, name in STAGES if s != "done" %}<option value="{{ s }}" {{ "selected" if form.status == s }}>{{ name }}</option>{% endfor %}</select>
   </label>
   {% endif %}
   <label>Goal <textarea name="goal" rows="2" placeholder="What will the player notice?">{{ form.goal or '' }}</textarea></label>

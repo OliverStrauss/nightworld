@@ -4,41 +4,75 @@
   {% if night.paused %}
     <span class="pill paused">⏸ Night shift paused</span>
   {% else %}
-    <span class="pill">Tonight: up to {{ night.maxCards }} cards / {{ night.pointsPerNight }} pts, stop {{ night.stopTime }}</span>
-  {% endif %}
-  {% if next_card %}
-    <span class="pill next">Next up: <a href="/cards/{{ next_card.id }}">{{ next_card.title }}</a></span>
-  {% else %}
-    <span class="pill muted">Nothing buildable in Ready</span>
+    <span class="pill">🌙 Tonight: up to {{ night.maxCards }} cards, stop {{ night.stopTime }}</span>
   {% endif %}
 </section>
-<div class="kanban">
-  {% for status, name in COLUMNS %}
-  <section class="column status-{{ status }}">
-    <h2>{{ name }} <span class="count">{{ by_status[status]|length }}</span></h2>
-    <div class="cards" data-status="{{ status }}">
-      {% for c in by_status[status] %}{% include "_tile.html" %}{% endfor %}
+
+<div class="stages">
+  <section class="stage stage-backlog">
+    <h2><span>📝 Backlog</span> <span class="count">{{ backlog|length }}</span></h2>
+    <p class="hint">Ideas and drafts. Drag one into Ready when it's good to build.</p>
+    <div class="cards" data-status="backlog" data-sort="true">
+      {% for c in backlog %}{% include "_tile.html" %}{% endfor %}
     </div>
-    {% if status == "ready" %}<p class="hint">Drag to reorder. The top card is built next.</p>{% endif %}
   </section>
-  {% endfor %}
+
+  <section class="stage stage-ready">
+    <h2><span>🔨 Ready</span> <span class="count">{{ working|length + queue|length + stuck|length }}</span></h2>
+    {% if working %}
+    <div class="cards fixed-list">
+      {% for c in working %}{% set fixed = true %}{% include "_tile.html" %}{% endfor %}
+    </div>
+    {% endif %}
+    <p class="hint">
+      {% if next_card %}Next to build: <a href="/cards/{{ next_card.id }}">{{ next_card.title }}</a>. Drag to change the order.
+      {% else %}Drag cards here from Backlog. The top one is built first.{% endif %}
+    </p>
+    <div class="cards queue" data-status="ready" data-sort="true">
+      {% for c in queue %}{% include "_tile.html" %}{% endfor %}
+    </div>
+    {% if stuck %}
+    <h3>Stuck, needs you</h3>
+    <div class="cards fixed-list">
+      {% for c in stuck %}{% set fixed = true %}{% include "_tile.html" %}{% endfor %}
+    </div>
+    {% endif %}
+  </section>
+
+  <section class="stage stage-done">
+    <h2><span>✅ Done</span> <span class="count">{{ to_merge|length + done_total }}</span></h2>
+    {% if to_merge %}
+    <h3>Built, PR to merge</h3>
+    <div class="cards fixed-list">
+      {% for c in to_merge %}{% set fixed = true %}{% include "_tile.html" %}{% endfor %}
+    </div>
+    {% endif %}
+    <div class="cards" data-status="done" data-sort="false">
+      {% for c in done %}{% include "_tile.html" %}{% endfor %}
+    </div>
+    {% if done_total > done|length %}<p class="hint"><a href="/activity">{{ done_total - done|length }} older</a></p>{% endif %}
+    {% if not done and not to_merge %}<p class="hint">Nothing finished yet. Soon!</p>{% endif %}
+  </section>
 </div>
 {% endblock %}
 {% block scripts %}
 <script src="/static/Sortable.min.js"></script>
 <script>
-  document.querySelectorAll(".cards").forEach(function (list) {
+  document.querySelectorAll(".cards[data-status]").forEach(function (list) {
     Sortable.create(list, {
       group: "cards",
+      sort: list.dataset.sort === "true",
       animation: 150,
       delay: 200,
       delayOnTouchOnly: true,
       onEnd: function (evt) {
         if (evt.from === evt.to && evt.oldIndex === evt.newIndex) return;
+        var body = {status: evt.to.dataset.status};
+        if (evt.to.dataset.sort === "true") body.position = evt.newIndex + 1;
         fetch("/cards/" + evt.item.dataset.id + "/move", {
           method: "POST",
           headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({status: evt.to.dataset.status, position: evt.newIndex + 1})
+          body: JSON.stringify(body)
         }).then(function (r) {
           if (!r.ok) return r.json().then(function (b) { alert(b.detail || "Couldn't move that card"); });
         }).finally(function () { location.reload(); });
