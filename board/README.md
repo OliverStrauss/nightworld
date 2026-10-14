@@ -2,7 +2,8 @@
 
 A small web app on the Pi: a kanban board you use from your phone, plus a JSON API that the
 nightly runner and the agents use. **Not built yet** — this file is the contract it has to meet,
-so the runner and agents can be written against it now.
+so the runner and agents can be written against it now. The build order, stack and design
+decisions are in [PLAN.md](PLAN.md).
 
 ## Requirements
 
@@ -32,6 +33,9 @@ cookie for `oliver`.
   "title": "Add bog slimes to meadow-fields",
   "type": "content",            // content | system | fix | chore
   "size": "S",                  // S | M
+  "effort": "low",              // low | medium | high (default from size: S → low, M → medium)
+  "epicId": 3,                  // optional; card is built on the epic's branch
+  "mergedToEpic": false,        // true once its PR is merged into the epic branch
   "status": "ready",
   "position": 1,                // order within its column
   "goal": "…",
@@ -52,21 +56,51 @@ cookie for `oliver`.
 | Method | Path | Who | What |
 |---|---|---|---|
 | GET | `/api/cards?status=ready` | all | List cards, ordered by status then position |
-| GET | `/api/cards/next` | builder | Top `ready` card whose dependencies are `done`. **204** if none |
+| GET | `/api/cards/next` | builder | Top `ready` card whose dependencies are met. **204** if none. A dependency is met when it's `done`, or when it's in the same epic and `mergedToEpic` is true |
 | GET | `/api/cards/:id` | all | One card |
 | POST | `/api/cards` | oliver, groomer* | Create (groomer may only create in `backlog`) |
-| PATCH | `/api/cards/:id` | oliver, builder* | Edit fields / status / position (builder may only set `status: verifying` and `prUrl`) |
+| PATCH | `/api/cards/:id` | oliver, builder* | Edit fields / status / position (builder may only set `status: verifying`, `prUrl` and `mergedToEpic`) |
 | POST | `/api/cards/:id/claim` | builder | `{branch}` → status `building`, `attempts += 1`, returns the card |
 | POST | `/api/cards/:id/review` | reviewer | `{verdict, notes, prUrl}` → applies the rules below |
 | POST | `/api/cards/:id/events` | all | `{type, message}` → activity entry only |
 | POST | `/api/cards/:id/comments` | all | `{body}` |
 | GET | `/api/activity?since=<iso>&card=<id>` | all | Audit log |
+| GET | `/api/epics`, `/api/epics/:id` | all | Epics with their cards in order |
+| POST / PATCH | `/api/epics`, `/api/epics/:id` | oliver, groomer* | Create / edit an epic (groomer may only create) |
+| GET | `/api/settings/night` | all | `{pointsPerNight, maxCards, stopTime, paused}` |
+| PUT | `/api/settings/night` | oliver | Change night settings |
+
+## Epic
+
+```json
+{
+  "id": 3,
+  "slug": "fishing",
+  "title": "Fishing minigame",
+  "pitch": "…",
+  "status": "open",             // open | merged | dropped
+  "branch": "epic/fishing",
+  "prUrl": "https://github.com/…/pull/30",   // draft PR epic branch → main
+  "cardIds": [21, 22, 23]
+}
+```
+
+## Effort and the night budget
+
+| Effort | Points |
+|---|---|
+| low | 1 |
+| medium | 2 |
+| high | 4 |
+
+The runner keeps taking `/api/cards/next` until the night's points or `maxCards` run out, or
+`stopTime` passes. When `paused` is true it builds nothing.
 
 ## Review rules (`POST /review`)
 
 | Verdict | Result |
 |---|---|
-| `PASS` | status → `review`, `consecutiveFails = 0` |
+| `PASS` | status → `review`, `consecutiveFails = 0`. For an epic card, the runner then merges its PR into the epic branch and sets `mergedToEpic: true` |
 | `FAIL` | `consecutiveFails += 1`; if it's now 2 → `blocked`, else → `ready` at **position 1** (retried tomorrow on the same branch) |
 | `BLOCKED` | status → `blocked` |
 
