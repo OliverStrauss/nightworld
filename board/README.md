@@ -1,9 +1,30 @@
 # Task board
 
 A small web app on the Pi: a kanban board you use from your phone, plus a JSON API that the
-nightly runner and the agents use. **Not built yet** — this file is the contract it has to meet,
-so the runner and agents can be written against it now. The build order, stack and design
-decisions are in [PLAN.md](PLAN.md).
+nightly runner and the agents use. This file is the contract it meets. The build order, stack
+and design decisions are in [PLAN.md](PLAN.md).
+
+## Run it on your computer
+
+```bash
+cd board
+python3 -m venv .venv && .venv/bin/pip install -e '.[test]'
+.venv/bin/pytest                                   # all green?
+
+.venv/bin/python -m app.auth                       # type a password, copy the hash it prints
+export BOARD_PASSWORD_HASH='pbkdf2_sha256$…'       # single quotes: the hash contains $
+export BOARD_SECRET="$(python3 -c 'import secrets; print(secrets.token_hex(32))')"
+export BOARD_TOKEN_OLIVER=… BOARD_TOKEN_BUILDER=… BOARD_TOKEN_REVIEWER=… BOARD_TOKEN_GROOMER=…
+export BOARD_DB=~/nightworld-board.db              # default: board.db in the current folder
+.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8787
+```
+
+Open <http://127.0.0.1:8787> and log in. To try it on your phone, either run uvicorn with
+`--host 0.0.0.0` and open `http://<your-computer's-LAN-IP>:8787` on the same Wi-Fi, or use
+`tailscale serve 8787`. Then "Add to Home Screen". Running it permanently on the Pi is the
+"Deploy" step in PLAN.md.
+
+The API docs (every endpoint, try-it-out) are at <http://127.0.0.1:8787/docs>.
 
 ## Requirements
 
@@ -60,6 +81,7 @@ cookie for `oliver`.
 | GET | `/api/cards/:id` | all | One card |
 | POST | `/api/cards` | oliver, groomer* | Create (groomer may only create in `backlog`) |
 | PATCH | `/api/cards/:id` | oliver, builder* | Edit fields / status / position (builder may only set `status: verifying`, `prUrl` and `mergedToEpic`) |
+| DELETE | `/api/cards/:id` | oliver | **204**. Removes the card, its comments and any dependency on it; the activity log keeps its history |
 | POST | `/api/cards/:id/claim` | builder | `{branch}` → status `building`, `attempts += 1`, returns the card |
 | POST | `/api/cards/:id/review` | reviewer | `{verdict, notes, prUrl}` → applies the rules below |
 | POST | `/api/cards/:id/events` | all | `{type, message}` → activity entry only |
@@ -67,6 +89,8 @@ cookie for `oliver`.
 | GET | `/api/activity?since=<iso>&card=<id>` | all | Audit log |
 | GET | `/api/epics`, `/api/epics/:id` | all | Epics with their cards in order |
 | POST / PATCH | `/api/epics`, `/api/epics/:id` | oliver, groomer* | Create / edit an epic (groomer may only create) |
+| POST | `/api/epics/:id/split` | oliver | **202**. Runs the groomer agent (`claude -p --agent groomer`, read-only) to draft the epic's cards into `backlog` as `groomer` |
+| GET | `/api/epics/:id/split` | all | `{state: never | running | done | failed, message}` |
 | GET | `/api/settings/night` | all | `{pointsPerNight, maxCards, stopTime, paused}` |
 | PUT | `/api/settings/night` | oliver | Change night settings |
 

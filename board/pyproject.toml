@@ -1,0 +1,24 @@
+[project]
+name = "nightworld-board"
+version = "0.1.0"
+description = "Task board for the NightWorld nightly runner"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "jinja2>=3.1",
+    "python-multipart>=0.0.9",  # FastAPI needs it to read HTML form posts
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8",
+    "httpx>=0.27",
+]
+
+[tool.setuptools]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

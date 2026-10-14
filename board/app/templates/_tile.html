@@ -1,0 +1,13 @@
+<a class="tile type-{{ c.type }} status-{{ c.status }}{{ ' fixed' if fixed }}" href="/cards/{{ c.id }}" data-id="{{ c.id }}">
+  {% if c.status not in ("backlog", "ready", "done") %}<span class="badge">{{ STATUS_NAMES[c.status] }}</span>{% endif %}
+  <span class="tile-title">{{ c.title }}</span>
+  <span class="chips">
+    <span class="chip">#{{ c.id }}</span>
+    <span class="chip">{{ c.type }}</span>
+    <span class="chip effort-{{ c.effort }}">{{ c.size }} · {{ c.effort }}</span>
+    {% if c.epicId %}<span class="chip epic">⛵ {{ epic_slugs.get(c.epicId, c.epicId) }}</span>{% endif %}
+    {% if c.dependsOn %}<span class="chip">needs {% for d in c.dependsOn %}#{{ d }}{% if not loop.last %}, {% endif %}{% endfor %}</span>{% endif %}
+    {% if c.prUrl %}<span class="chip pr">PR</span>{% endif %}
+    {% if c.consecutiveFails %}<span class="chip fail">✗{{ c.consecutiveFails }}</span>{% endif %}
+  </span>
+</a>

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Night settings{% endblock %}
+{% block main %}
+<form class="panel" method="post" action="/settings">
+  <h1>Night shift</h1>
+  <p class="muted">How much the builder takes on each night. Effort points: low 1, medium 2, high 4.</p>
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  {% if saved %}<p class="ok">Saved. The goblins have been informed.</p>{% endif %}
+  <div class="row">
+    <label>Points per night <input type="number" min="0" name="pointsPerNight" value="{{ night.pointsPerNight }}"></label>
+    <label>Max cards <input type="number" min="0" name="maxCards" value="{{ night.maxCards }}"></label>
+    <label>Stop at <input type="time" name="stopTime" value="{{ night.stopTime }}"></label>
+  </div>
+  <label class="check"><input type="checkbox" name="paused" {{ "checked" if night.paused }}> Pause the night shift (build nothing)</label>
+  <p class="actions"><button>Save</button></p>
+</form>
+{% endblock %}

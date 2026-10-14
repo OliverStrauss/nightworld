@@ -34,3 +34,6 @@
 *.ttf   filter=lfs diff=lfs merge=lfs -text
 *.otf   filter=lfs diff=lfs merge=lfs -text
 *.unitypackage filter=lfs diff=lfs merge=lfs -text
+
+# Board web app icons are tiny and served straight from a clone on the Pi: keep them out of LFS
+board/app/static/*.png -filter -diff -merge binary
