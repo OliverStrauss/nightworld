@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8cf633378040821de1d7b5a95040d4dc, type: 3}
+  m_Name: harbor-outfitter
+  m_EditorClassIdentifier: 
+  id: harbor-outfitter
+  displayName: Harbor Outfitter
+  inventory:
+  - {fileID: 11400000, guid: fd4010f1ddc1d60578afa7cf7552313a, type: 2}
+  - {fileID: 11400000, guid: 9fbd4cae7ecb64ab39bce3370961057c, type: 2}
+  - {fileID: 11400000, guid: 4f5c67edbcf2261ee38eeaa84e91b537, type: 2}
+  sellRatio: 0.4

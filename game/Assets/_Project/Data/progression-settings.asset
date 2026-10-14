@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8fdb4a4428ded21f6af0aa55a168ace4, type: 3}
+  m_Name: progression-settings
+  m_EditorClassIdentifier: 
+  levelCap: 20
+  baseXp: 50
+  exponent: 1.6
+  baseMaxHp: 100
+  maxHpPerLevel: 10
+  baseDamage: 5
+  damagePerLevel: 1

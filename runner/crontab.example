@@ -1,0 +1,9 @@
+# Install with:  crontab -e   and paste the lines below (edit the paths).
+# Times are in the Pi's local time zone. Check it with `timedatectl`; set it with
+#   sudo timedatectl set-timezone America/Chicago
+
+# Every night at 02:13, build the top Ready card.
+13 2 * * * /home/oliver/nightworld-runner/runner/nightly.sh >> /home/oliver/nightworld-logs/cron.log 2>&1
+
+# Optional: groom the backlog on Sunday afternoons (proposes splits as comments, never moves cards).
+# 7 15 * * 0 cd /home/oliver/nightworld-runner && claude -p --agent groomer --permission-mode dontAsk --permission-prompts none --allowedTools "Read" "Glob" "Grep" "Bash(curl *)" "Groom the backlog. Board API: http://localhost:8787, token in GROOMER_TOKEN." >> /home/oliver/nightworld-logs/groomer.log 2>&1

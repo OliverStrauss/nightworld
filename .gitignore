@@ -1,0 +1,54 @@
+# ---- Unity (project lives in game/)
+game/[Ll]ibrary/
+game/[Tt]emp/
+game/[Oo]bj/
+game/[Bb]uild/
+game/[Bb]uilds/
+game/[Ll]ogs/
+game/[Uu]ser[Ss]ettings/
+game/[Mm]emoryCaptures/
+game/[Rr]ecordings/
+game/Screenshots/
+game/Assets/Plugins/Editor/JetBrains*
+game/.vs/
+game/.vscode/
+game/.idea/
+game/*.csproj
+game/*.sln
+game/*.slnx
+game/*.unityproj
+game/*.user
+game/*.pidb
+game/*.booproj
+game/*.suo
+game/*.tmp
+game/*.svd
+game/*.pdb
+game/*.mdb
+game/*.opendb
+game/*.VC.db
+game/*.pidb.meta
+game/*.pdb.meta
+game/*.mdb.meta
+game/sysinfo.txt
+game/crashlytics-build.properties
+game/Assets/StreamingAssets/aa*
+# Unity template leftovers you don't need
+game/Assets/TutorialInfo*
+game/Assets/Readme.asset*
+
+# ---- CI / runner
+test-results/
+artifacts/
+runner/.env
+
+# ---- Board (when it exists)
+board/node_modules/
+board/*.db
+board/*.db-*
+board/.env
+
+# ---- OS / editors
+.DS_Store
+Thumbs.db
+*.swp

@@ -1,0 +1,86 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c46237c3d1255c7dc44973e80aaf38dc, type: 3}
+  m_Name: meadow-fields
+  m_EditorClassIdentifier: 
+  id: meadow-fields
+  displayName: Meadow Fields
+  zoneType: 1
+  levelMin: 1
+  levelMax: 3
+  dangerTier: 1
+  ground:
+    size: {x: 140, y: 140}
+    color: {r: 0.45, g: 0.7, b: 0.35, a: 1}
+    heightAmplitude: 3
+    noiseScale: 0.025
+    seed: 7
+    vertexSpacing: 2
+  playerSpawn: {x: 0, y: 0, z: -55}
+  props:
+  - name: bush-1
+    prefab: {fileID: 0}
+    placeholder: 2
+    placeholderColor: {r: 0.2, g: 0.5, b: 0.2, a: 1}
+    position: {x: -12, y: 0, z: -6}
+    rotation: {x: 0, y: 0, z: 0}
+    scale: {x: 2.5, y: 1.8, z: 2.5}
+    snapToGround: 1
+  - name: bush-2
+    prefab: {fileID: 0}
+    placeholder: 2
+    placeholderColor: {r: 0.2, g: 0.5, b: 0.2, a: 1}
+    position: {x: 14, y: 0, z: 8}
+    rotation: {x: 0, y: 0, z: 0}
+    scale: {x: 3, y: 2, z: 3}
+    snapToGround: 1
+  - name: bush-3
+    prefab: {fileID: 0}
+    placeholder: 2
+    placeholderColor: {r: 0.2, g: 0.5, b: 0.2, a: 1}
+    position: {x: 30, y: 0, z: 22}
+    rotation: {x: 0, y: 0, z: 0}
+    scale: {x: 2, y: 1.5, z: 2}
+    snapToGround: 1
+  - name: rock-1
+    prefab: {fileID: 0}
+    placeholder: 1
+    placeholderColor: {r: 0.55, g: 0.55, b: 0.58, a: 1}
+    position: {x: -20, y: 0, z: 20}
+    rotation: {x: 12, y: 35, z: 5}
+    scale: {x: 3, y: 2, z: 2.5}
+    snapToGround: 1
+  - name: rock-2
+    prefab: {fileID: 0}
+    placeholder: 1
+    placeholderColor: {r: 0.55, g: 0.55, b: 0.58, a: 1}
+    position: {x: 8, y: 0, z: -20}
+    rotation: {x: 0, y: 60, z: 8}
+    scale: {x: 2, y: 1.2, z: 2}
+    snapToGround: 1
+  enemySpawns:
+  - enemy: {fileID: 11400000, guid: ef6edfdedc760398b826f739b428fc9c, type: 2}
+    position: {x: 0, y: 0, z: 0}
+    radius: 12
+    count: 5
+  - enemy: {fileID: 11400000, guid: ef6edfdedc760398b826f739b428fc9c, type: 2}
+    position: {x: 25, y: 0, z: 30}
+    radius: 8
+    count: 3
+  shops: []
+  screenshotPoints:
+  - name: overview
+    position: {x: 0, y: 45, z: -80}
+    lookAt: {x: 0, y: 0, z: 10}
+  - name: slimes
+    position: {x: 6, y: 6, z: -16}
+    lookAt: {x: 0, y: 0, z: 0}

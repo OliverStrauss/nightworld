@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5fec34f75235fd738dc7f29685f99052, type: 3}
+  m_Name: meadow-slime
+  m_EditorClassIdentifier: 
+  id: meadow-slime
+  displayName: Meadow Slime
+  maxHp: 20
+  damage: 3
+  attackCooldown: 1.5
+  moveSpeed: 1.5
+  xpReward: 10
+  goldMin: 1
+  goldMax: 3
+  lootTable:
+  - item: {fileID: 11400000, guid: 9e4e56e8fbe58efb192d543bb967d564, type: 2}
+    chance: 0.6
+  - item: {fileID: 11400000, guid: 4f5c67edbcf2261ee38eeaa84e91b537, type: 2}
+    chance: 0.1
+  prefab: {fileID: 0}
+  placeholderColor: {r: 0.55, g: 0.85, b: 0.3, a: 1}
+  placeholderScale: {x: 1, y: 0.6, z: 1}

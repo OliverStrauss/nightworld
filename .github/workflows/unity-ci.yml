@@ -1,0 +1,109 @@
+# Verification layers 1-5 from docs/verification.md. The reviewer agent (layer 6) runs on the Pi
+# after this workflow finishes and reads its artifacts.
+name: Unity CI
+
+on:
+  pull_request:
+    paths:
+      - "game/**"
+      - "tools/**"
+      - ".github/workflows/unity-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "game/**"
+  workflow_dispatch:
+
+concurrency:
+  group: unity-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Fast, no Unity needed: meta files, GUIDs, references, and scope rules for nightly branches.
+  asset-checks:
+    name: Asset + scope checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Meta files, GUIDs and references
+        run: python3 tools/check_assets.py
+      - name: Nightly branches must not touch scenes, ThirdParty, CI or agent config
+        if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'night/') && !contains(github.event.pull_request.labels.*.name, 'allow-protected-edits')
+        run: |
+          changed=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")
+          echo "$changed"
+          bad=$(echo "$changed" | grep -E '\.unity$|^game/Assets/ThirdParty/|^\.github/|^runner/|^\.claude/|^CLAUDE\.md$' || true)
+          if [ -n "$bad" ]; then
+            echo "::error::Nightly PRs may not change these files (add the 'allow-protected-edits' label to override):"
+            echo "$bad"
+            exit 1
+          fi
+
+  # Compile + EditMode tests (includes the ContentValidator test) + PlayMode tests.
+  tests:
+    name: Compile, validate, test
+    needs: asset-checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/cache@v4
+        with:
+          path: game/Library
+          key: Library-${{ hashFiles('game/Assets/**', 'game/Packages/**', 'game/ProjectSettings/**') }}
+          restore-keys: Library-
+      - uses: game-ci/unity-test-runner@v4
+        id: tests
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: game
+          testMode: all
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          checkName: Unity test results
+          artifactsPath: test-results
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: ${{ steps.tests.outputs.artifactsPath }}
+
+  # Renders every zone from its screenshot points for the reviewer agent.
+  screenshots:
+    name: Zone screenshots
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/cache@v4
+        with:
+          path: game/Library
+          key: Library-screens-${{ hashFiles('game/Assets/**', 'game/Packages/**', 'game/ProjectSettings/**') }}
+          restore-keys: |
+            Library-screens-
+            Library-
+      - uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: game
+          targetPlatform: StandaloneLinux64
+          buildMethod: NightWorld.EditorTools.ZoneScreenshotter.RunFromCommandLine
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zone-screenshots
+          path: game/Screenshots/**
+          if-no-files-found: warn

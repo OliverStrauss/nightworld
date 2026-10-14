@@ -1,0 +1,74 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c46237c3d1255c7dc44973e80aaf38dc, type: 3}
+  m_Name: harbor-town
+  m_EditorClassIdentifier: 
+  id: harbor-town
+  displayName: Harbor Town
+  zoneType: 0
+  levelMin: 1
+  levelMax: 1
+  dangerTier: 1
+  ground:
+    size: {x: 80, y: 80}
+    color: {r: 0.78, g: 0.72, b: 0.55, a: 1}
+    heightAmplitude: 0.5
+    noiseScale: 0.04
+    seed: 3
+    vertexSpacing: 2
+  playerSpawn: {x: 0, y: 0, z: -10}
+  props:
+  - name: house-west
+    prefab: {fileID: 0}
+    placeholder: 1
+    placeholderColor: {r: 0.85, g: 0.8, b: 0.7, a: 1}
+    position: {x: -15, y: 0, z: 10}
+    rotation: {x: 0, y: 10, z: 0}
+    scale: {x: 6, y: 5, z: 6}
+    snapToGround: 1
+  - name: house-east
+    prefab: {fileID: 0}
+    placeholder: 1
+    placeholderColor: {r: 0.85, g: 0.8, b: 0.7, a: 1}
+    position: {x: 15, y: 0, z: 10}
+    rotation: {x: 0, y: -8, z: 0}
+    scale: {x: 6, y: 5, z: 6}
+    snapToGround: 1
+  - name: house-south
+    prefab: {fileID: 0}
+    placeholder: 1
+    placeholderColor: {r: 0.6, g: 0.3, b: 0.25, a: 1}
+    position: {x: -15, y: 0, z: -15}
+    rotation: {x: 0, y: 0, z: 0}
+    scale: {x: 7, y: 4, z: 5}
+    snapToGround: 1
+  - name: well
+    prefab: {fileID: 0}
+    placeholder: 4
+    placeholderColor: {r: 0.55, g: 0.55, b: 0.58, a: 1}
+    position: {x: 0, y: 0, z: 0}
+    rotation: {x: 0, y: 0, z: 0}
+    scale: {x: 1.5, y: 0.6, z: 1.5}
+    snapToGround: 1
+  enemySpawns: []
+  shops:
+  - shop: {fileID: 11400000, guid: 07284e92f01c4982b7aea8e6f53da84b, type: 2}
+    position: {x: 8, y: 0, z: -2}
+    rotationY: -90
+    prefab: {fileID: 0}
+  screenshotPoints:
+  - name: overview
+    position: {x: 0, y: 35, z: -45}
+    lookAt: {x: 0, y: 0, z: 0}
+  - name: shop
+    position: {x: 14, y: 6, z: -10}
+    lookAt: {x: 8, y: 1, z: -2}
