@@ -20,6 +20,9 @@ Acceptance criteria
   - [ ] A PlayMode test kills a bog slime and checks XP went up by 12
   - [ ] Zone screenshot `meadow-fields/overview` shows the slimes
 
+World fit (cards that add to the world; see docs/world.md)
+  meadow-fields, tier 1, levels 1–3. Reuses slime-gel as loot. Adds bog-slime.
+
 Notes
   Use the Kenney "slime" model if present in ThirdParty, otherwise a green capsule.
 ```

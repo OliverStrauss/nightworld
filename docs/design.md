@@ -32,7 +32,9 @@ explore → fight → earn XP + gold → level up / buy gear → unlock harder z
 - Each level grants + max HP and + base damage (values in `ProgressionSettings`).
 
 ## World structure
-- **Zones** are self-contained areas joined by paths or portals. Each zone has a
+- One seamless world: zones sit side by side on a world map and you walk between them, no
+  portals. Where zones go, their tiers and names live in `docs/world.md`.
+- **Zones** are areas of the world, each with a biome. Each zone has a
   recommended level range and a danger tier (1 = starter).
 - **Towns**: safe, have NPCs and shops, no enemy spawns.
 - **Enemy zones**: spawn points with enemy tables, maybe a boss later.
