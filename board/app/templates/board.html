@@ -12,9 +12,25 @@
   <section class="stage stage-backlog">
     <h2><span>📝 Backlog</span> <span class="count">{{ backlog|length }}</span></h2>
     <p class="hint">Ideas and drafts. Drag one into Ready when it's good to build.</p>
-    <div class="cards" data-status="backlog" data-sort="true">
-      {% for c in backlog %}{% include "_tile.html" %}{% endfor %}
-    </div>
+    {% for g in backlog_groups %}
+      {% if g.epic %}
+      <div class="epic-group">
+        <div class="epic-group-head">
+          <a href="/epics/{{ g.epic.id }}">⛵ {{ g.epic.title }}</a>
+          <span class="muted">{{ g.cards|length }} card{{ "s" if g.cards|length != 1 }}, in build order</span>
+          <form method="post" action="/epics/{{ g.epic.id }}/ready"><button class="small">All to Ready ▶</button></form>
+        </div>
+        <div class="cards" data-status="backlog" data-sort="false">
+          {% for c in g.cards %}{% include "_tile.html" %}{% endfor %}
+        </div>
+      </div>
+      {% else %}
+      {% if backlog_groups|length > 1 and g.cards %}<h3>No epic</h3>{% endif %}
+      <div class="cards" data-status="backlog" data-sort="true">
+        {% for c in g.cards %}{% include "_tile.html" %}{% endfor %}
+      </div>
+      {% endif %}
+    {% endfor %}
   </section>
 
   <section class="stage stage-ready">
@@ -68,7 +84,12 @@
       onEnd: function (evt) {
         if (evt.from === evt.to && evt.oldIndex === evt.newIndex) return;
         var body = {status: evt.to.dataset.status};
-        if (evt.to.dataset.sort === "true") body.position = evt.newIndex + 1;
+        if (evt.to.dataset.sort === "true") {
+          // A stage can be split into several boxes (epic groups): count across all of them.
+          var tiles = Array.prototype.slice.call(
+            document.querySelectorAll('.cards[data-status="' + body.status + '"] .tile'));
+          body.position = tiles.indexOf(evt.item) + 1;
+        }
         fetch("/cards/" + evt.item.dataset.id + "/move", {
           method: "POST",
           headers: {"Content-Type": "application/json"},

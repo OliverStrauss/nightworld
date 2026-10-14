@@ -178,3 +178,17 @@ button, .button {
 .split small { flex: 1 1 14rem; }
 .pill.working { animation: pulse 1.6s ease-in-out infinite; }
 button.danger { background: var(--danger); color: #fff; }
+
+/* Backlog: cards from one epic sit together in a box */
+.epic-group {
+  border: 2px solid color-mix(in srgb, var(--verifying) 55%, transparent);
+  background: color-mix(in srgb, var(--verifying) 10%, transparent);
+  border-radius: 12px; padding: 0.6rem; margin: 0.4rem 0 0.8rem;
+}
+.epic-group-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.6rem; margin-bottom: 0.5rem; }
+.epic-group-head a { color: var(--text); font-weight: 800; text-decoration: none; }
+.epic-group-head .muted { font-size: 0.8rem; flex: 1; }
+.epic-group-head form { margin: 0; }
+.epic-group .tile { border-left-color: var(--verifying); }
+button.small { padding: 0.3rem 0.8rem; font-size: 0.85rem; margin: 0; }
+.epic-group .chip.epic { display: none; }  /* the box already says which epic */

@@ -260,3 +260,40 @@ def test_delete_needs_login(client, make_card):
     make_card()
     assert client.post("/cards/1/delete", follow_redirects=False).status_code == 303
     assert client.get("/api/cards/1", headers=auth("oliver")).status_code == 200
+
+
+def test_backlog_groups_cards_by_epic_in_build_order(browser, client, make_card):
+    client.post("/api/epics", json={"slug": "player", "title": "Player"}, headers=auth("oliver"))
+    run = make_card(title="Run", epicId=1)
+    make_card(title="Loose idea")
+    make_card(title="Walk", epicId=1)
+    client.patch(f"/api/cards/{run['id']}", json={"dependsOn": [3]}, headers=auth("oliver"))
+    make_card(title="Jump", epicId=1, status="ready")  # not in backlog: not in the box
+
+    html = browser.get("/").text
+    box = html[html.index('class="epic-group"'):html.index("No epic")]
+    assert "⛵ Player" in box and "2 cards, in build order" in box
+    assert box.index("Walk") < box.index("Run")  # Run depends on Walk
+    assert "Jump" not in box and "Loose idea" not in box
+    assert html.index("No epic") < html.index("Loose idea") < html.index("stage-ready")
+
+
+def test_backlog_without_epics_has_no_group_heading(browser, make_card):
+    make_card(title="Loose idea")
+    html = browser.get("/").text
+    assert 'class="epic-group"' not in html and "No epic" not in html
+
+
+def test_all_to_ready_moves_an_epics_backlog_in_build_order(browser, client, make_card):
+    client.post("/api/epics", json={"slug": "player", "title": "Player"}, headers=auth("oliver"))
+    make_card(title="Already ready", status="ready")
+    run = make_card(title="Run", epicId=1)
+    make_card(title="Walk", epicId=1)
+    make_card(title="Loose idea")
+    client.patch(f"/api/cards/{run['id']}", json={"dependsOn": [3]}, headers=auth("oliver"))
+
+    r = browser.post("/epics/1/ready", follow_redirects=False)
+    assert r.status_code == 303
+    ready = client.get("/api/cards?status=ready", headers=auth("oliver")).json()
+    assert [c["title"] for c in ready] == ["Already ready", "Walk", "Run"]
+    assert [c["title"] for c in client.get("/api/cards?status=backlog", headers=auth("oliver")).json()] == ["Loose idea"]

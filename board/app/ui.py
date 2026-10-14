@@ -99,16 +99,26 @@ def board(request: Request, actor: str = Depends(login_required), conn: sqlite3.
         return [c for c in all_cards if c["status"] in statuses]
 
     finished = sorted(having("done"), key=lambda c: c["updatedAt"], reverse=True)
+    backlog = having("backlog")
+    all_epics = epics.list_epics(conn)
+    # Backlog: one box per epic (cards in build order), then the cards with no epic.
+    groups = []
+    for epic in all_epics:
+        in_backlog = {c["id"]: c for c in backlog if c["epicId"] == epic["id"]}
+        if in_backlog:
+            groups.append({"epic": epic, "cards": [in_backlog[i] for i in epic["cardIds"] if i in in_backlog]})
+    groups.append({"epic": None, "cards": [c for c in backlog if not c["epicId"]]})
     return page(
         request, "board.html",
-        backlog=having("backlog"),
+        backlog=backlog,
+        backlog_groups=groups,
         working=having("building", "verifying"),
         queue=having("ready"),
         stuck=having("blocked"),
         to_merge=having("review"),
         done=finished[:DONE_SHOWN],
         done_total=len(finished),
-        epic_slugs={e["id"]: e["slug"] for e in epics.list_epics(conn)},
+        epic_slugs={e["id"]: e["slug"] for e in all_epics},
         night=night.get(conn),
         next_card=cards.next_card(conn),
     )
@@ -307,6 +317,15 @@ def epic_page(
         request, "epic.html", epic=epic, done=sum(c["status"] == "done" for c in epic["cards"]),
         split=splitter.status(conn, epic_id),
     )
+
+
+@router.post("/epics/{epic_id}/ready")
+def epic_to_ready(epic_id: int, actor: str = Depends(login_required), conn: sqlite3.Connection = Depends(get_conn)):
+    """Move all of an epic's Backlog cards to the end of Ready, in build order."""
+    for card_id in epics.card_ids(conn, epic_id):
+        if cards.get_row(conn, card_id)["status"] == "backlog":
+            cards.update_card(conn, actor, card_id, {"status": "ready"})
+    return back_to("/")
 
 
 @router.post("/epics/{epic_id}/split")
