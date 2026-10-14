@@ -62,5 +62,10 @@ Keep systems talking through small interfaces or C# events, not by finding each 
   `-executeMethod NightWorld.EditorTools.ZoneScreenshotter.RunFromCommandLine`
 - `BootSceneCreator` — menu NightWorld → Setup → Create Boot Scene. Builds the only scene from
   code so nobody hand-edits scene YAML.
+- `WrapperPrefabCreator` — menu NightWorld → Setup → Create Wrapper Prefabs. Wraps every FBX
+  under `ThirdParty/` in a prefab variant with colliders under `_Project/Prefabs/`, mirroring the
+  folder layout. Existing prefabs are skipped. Data references these prefabs, never raw models.
+- `ThirdPartyImportScale` — sets each pack's model import scale so 1 unit = 1 metre. Add a line
+  when a new pack imports at the wrong size.
 
 Agents add content by writing `.asset` YAML directly; see [content-yaml.md](content-yaml.md).
