@@ -40,10 +40,28 @@ exec > >(tee -a "$WORK/run.log") 2>&1
 log() { echo "[$(date +%T)] $*"; }
 
 # Only one run at a time, even if cron fires twice or you run it by hand.
-exec 9>"$LOG_DIR/.lock"
-if ! flock -n 9; then
-  log "Another run is in progress; exiting."
+# macOS has no flock(1); fall back to an atomic mkdir lock there.
+if command -v flock >/dev/null; then
+  exec 9>"$LOG_DIR/.lock"
+  if ! flock -n 9; then
+    log "Another run is in progress; exiting."
+    exit 0
+  fi
+elif mkdir "$LOG_DIR/.lock.d" 2>/dev/null; then
+  trap 'rmdir "$LOG_DIR/.lock.d"' EXIT
+else
+  log "Another run is in progress (or a stale $LOG_DIR/.lock.d); exiting."
   exit 0
+fi
+
+# macOS has no timeout(1); Homebrew coreutils installs it as gtimeout.
+if ! command -v timeout >/dev/null; then
+  if command -v gtimeout >/dev/null; then
+    timeout() { gtimeout "$@"; }
+  else
+    log "No timeout(1) or gtimeout found (brew install coreutils); running without time limits."
+    timeout() { shift; "$@"; }
+  fi
 fi
 
 board() { # board <token> <curl args...>
