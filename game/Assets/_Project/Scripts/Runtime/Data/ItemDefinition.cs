@@ -28,12 +28,15 @@ namespace NightWorld.Data
         [Min(0)] public int baseValue = 10;
 
         [Header("Weapon")]
+        [Tooltip("Damage dealt per hit while equipped. Only used when itemType is Weapon.")]
         [Min(0)] public int damage;
 
         [Header("Armor")]
+        [Tooltip("Armor value added while equipped. Only used when itemType is Armor.")]
         [Min(0)] public int armor;
 
         [Header("Consumable")]
+        [Tooltip("HP restored when used. Only used when itemType is Consumable.")]
         [Min(0)] public int healAmount;
     }
 }
