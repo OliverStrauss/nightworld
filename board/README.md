@@ -88,6 +88,8 @@ cookie for `oliver`.
 | GET | `/api/activity?since=<iso>&card=<id>` | all | Audit log |
 | GET | `/api/epics`, `/api/epics/:id` | all | Epics with their cards in order |
 | POST / PATCH | `/api/epics`, `/api/epics/:id` | oliver, groomer* | Create / edit an epic (groomer may only create) |
+| POST | `/api/epics/:id/split` | oliver | **202**. Runs the groomer agent (`claude -p --agent groomer`, read-only) to draft the epic's cards into `backlog` as `groomer` |
+| GET | `/api/epics/:id/split` | all | `{state: never | running | done | failed, message}` |
 | GET | `/api/settings/night` | all | `{pointsPerNight, maxCards, stopTime, paused}` |
 | PUT | `/api/settings/night` | oliver | Change night settings |
 

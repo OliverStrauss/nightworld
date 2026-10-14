@@ -11,7 +11,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import ValidationError
 
-from . import cards, epics, night
+from . import cards, epics, night, splitter
 from .api import CardCreate, CardPatch, EpicCreate, EpicPatch, NightSettings, get_conn
 from .auth import COOKIE, SESSION_DAYS, check_password, make_session, session_actor
 
@@ -297,7 +297,20 @@ def epic_page(
     request: Request, epic_id: int, actor: str = Depends(login_required), conn: sqlite3.Connection = Depends(get_conn)
 ):
     epic = epics.with_cards(conn, epic_id)
-    return page(request, "epic.html", epic=epic, done=sum(c["status"] == "done" for c in epic["cards"]))
+    return page(
+        request, "epic.html", epic=epic, done=sum(c["status"] == "done" for c in epic["cards"]),
+        split=splitter.status(conn, epic_id),
+    )
+
+
+@router.post("/epics/{epic_id}/split")
+def split_epic(request: Request, epic_id: int, actor: str = Depends(login_required)):
+    try:
+        splitter.start(request.app.state.connect, epic_id, actor)
+    except HTTPException as exc:
+        if exc.status_code != 409:  # already running: just show the page
+            raise
+    return back_to(f"/epics/{epic_id}")
 
 
 @router.post("/epics/{epic_id}/edit")
@@ -313,7 +326,7 @@ async def save_epic(
         epic = epics.with_cards(conn, epic_id)
         return page(
             request, "epic.html", status_code=422, epic=epic, error=error_text(exc),
-            done=sum(c["status"] == "done" for c in epic["cards"]),
+            done=sum(c["status"] == "done" for c in epic["cards"]), split=splitter.status(conn, epic_id),
         )
     return back_to(f"/epics/{epic_id}")
 

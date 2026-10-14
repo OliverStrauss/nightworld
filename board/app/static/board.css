@@ -172,3 +172,8 @@ button, .button {
 .progress.big { height: 12px; }
 .progress span { display: block; height: 100%; background: linear-gradient(90deg, var(--grass), var(--moon)); }
 .epic-cards li { margin: 0.3rem 0; }
+
+.split { margin: 1rem 0 0.5rem; }
+.split form { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.split small { flex: 1 1 14rem; }
+.pill.working { animation: pulse 1.6s ease-in-out infinite; }

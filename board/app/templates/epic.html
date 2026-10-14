@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ epic.title }}{% endblock %}
 {% block main %}
+{% if split and split.state == "running" %}<meta http-equiv="refresh" content="15">{% endif %}
 <article class="panel">
   <p class="crumbs"><a href="/epics">Epics</a> · <span class="chip">{{ epic.status }}</span></p>
   <h1>⛵ {{ epic.title }}</h1>
@@ -17,7 +18,19 @@
     <li><a href="/cards/{{ c.id }}">#{{ c.id }} {{ c.title }}</a> <span class="status-tag status-{{ c.status }}">{{ STATUS_NAMES[c.status] }}</span>{% if c.mergedToEpic %} <span class="chip epic">merged</span>{% endif %}</li>
     {% else %}<li class="muted">No cards yet.</li>{% endfor %}
   </ol>
-  <p><a class="button" href="/cards/new?epic={{ epic.id }}">＋ Card in this epic</a></p>
+  <div class="split">
+    {% if split and split.state == "running" %}
+      <p class="pill working">🧹 {{ split.message }} This takes a few minutes. Refresh to check.</p>
+    {% else %}
+      {% if split and split.state == "done" %}<p class="ok">{{ split.message }}. Check them in Backlog, then drag the good ones to Ready.</p>{% endif %}
+      {% if split and split.state == "failed" %}<p class="error">The groomer couldn't split it: {{ split.message }}</p>{% endif %}
+      <form method="post" action="/epics/{{ epic.id }}/split">
+        <button>🧹 Split into cards</button>
+        <small class="muted">The groomer reads the repo and drafts S/M cards into Backlog. Nothing gets built until you move them to Ready.</small>
+      </form>
+    {% endif %}
+  </div>
+  <p><a class="button ghost" href="/cards/new?epic={{ epic.id }}">＋ Card by hand</a></p>
 </article>
 <form class="panel" method="post" action="/epics/{{ epic.id }}/edit">
   <h2>Edit epic</h2>

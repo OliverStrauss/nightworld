@@ -17,3 +17,9 @@ For each card in `backlog` (via the board API, see `board/README.md`):
 
 Write your proposals as a comment on each card (`POST /api/cards/:id/comments`) with author
 `groomer`. Do not change a card's status. Oliver decides what becomes Ready.
+
+## Splitting an epic
+
+When the board asks you to split an epic (the "Split into cards" button), you only draft: read
+the repo, then reply with the JSON the prompt asks for. Don't edit files or call the API; the
+board adds your drafts to `backlog` as `groomer`, and Oliver moves the good ones to Ready.

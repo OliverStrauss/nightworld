@@ -6,7 +6,7 @@ from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
-from . import cards, epics, night
+from . import cards, epics, night, splitter
 from .auth import current_actor, require
 
 router = APIRouter(prefix="/api")
@@ -238,3 +238,16 @@ def update_epic(
 ):
     require(actor, "oliver")
     return epics.update_epic(conn, actor, epic_id, reject_nulls(body.model_dump(exclude_unset=True)))
+
+
+@router.post("/epics/{epic_id}/split", status_code=202)
+def split_epic(epic_id: int, request: Request, actor: str = Depends(current_actor)):
+    """Ask the groomer to draft this epic's cards into backlog. Poll GET for `split` progress."""
+    require(actor, "oliver")
+    return splitter.start(request.app.state.connect, epic_id, actor)
+
+
+@router.get("/epics/{epic_id}/split")
+def split_status(epic_id: int, actor: str = Depends(current_actor), conn: sqlite3.Connection = Depends(get_conn)):
+    epics.get_row(conn, epic_id)
+    return splitter.status(conn, epic_id) or {"state": "never"}
