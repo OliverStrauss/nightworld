@@ -76,7 +76,11 @@ namespace NightWorld.EditorTools
         public static List<string> CaptureZone(ZoneDefinition zone)
         {
             var files = new List<string>();
+            // NewScene(Single) unloads assets no scene references, which destroys `zone`.
+            // Reload it from its path afterwards.
+            string zonePath = AssetDatabase.GetAssetPath(zone);
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            zone = AssetDatabase.LoadAssetAtPath<ZoneDefinition>(zonePath);
 
             var sun = new GameObject("Sun").AddComponent<Light>();
             sun.type = LightType.Directional;
