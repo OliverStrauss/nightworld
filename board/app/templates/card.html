@@ -12,7 +12,12 @@
     {% if card.consecutiveFails %}<span class="chip fail">✗{{ card.consecutiveFails }} in a row</span>{% endif %}
     {% if card.mergedToEpic %}<span class="chip epic">merged into epic</span>{% endif %}
   </p>
-  <p><a class="button ghost" href="/cards/{{ card.id }}/edit">Edit</a></p>
+  <div class="actions">
+    <a class="button ghost" href="/cards/{{ card.id }}/edit">✏️ Edit</a>
+    <form method="post" action="/cards/{{ card.id }}/delete" onsubmit="return confirm('Delete “{{ card.title|e }}”? This can’t be undone.')">
+      <button class="danger">🗑 Delete</button>
+    </form>
+  </div>
 
   {% if card.goal %}<h2>Goal</h2><p class="prose">{{ card.goal }}</p>{% endif %}
   {% if card.criteria %}

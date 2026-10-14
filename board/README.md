@@ -81,6 +81,7 @@ cookie for `oliver`.
 | GET | `/api/cards/:id` | all | One card |
 | POST | `/api/cards` | oliver, groomer* | Create (groomer may only create in `backlog`) |
 | PATCH | `/api/cards/:id` | oliver, builder* | Edit fields / status / position (builder may only set `status: verifying`, `prUrl` and `mergedToEpic`) |
+| DELETE | `/api/cards/:id` | oliver | **204**. Removes the card, its comments and any dependency on it; the activity log keeps its history |
 | POST | `/api/cards/:id/claim` | builder | `{branch}` → status `building`, `attempts += 1`, returns the card |
 | POST | `/api/cards/:id/review` | reviewer | `{verdict, notes, prUrl}` → applies the rules below |
 | POST | `/api/cards/:id/events` | all | `{type, message}` → activity entry only |

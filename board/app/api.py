@@ -167,6 +167,13 @@ def update_card(
     return cards.update_card(conn, actor, card_id, reject_nulls(body.model_dump(exclude_unset=True)))
 
 
+@router.delete("/cards/{card_id}", status_code=204)
+def delete_card(card_id: int, actor: str = Depends(current_actor), conn: sqlite3.Connection = Depends(get_conn)):
+    require(actor, "oliver")
+    cards.delete_card(conn, actor, card_id)
+    return Response(status_code=204)
+
+
 @router.post("/cards/{card_id}/claim")
 def claim(card_id: int, body: Claim, actor: str = Depends(current_actor), conn: sqlite3.Connection = Depends(get_conn)):
     require(actor, "builder")

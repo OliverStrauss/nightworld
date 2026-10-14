@@ -298,3 +298,19 @@ def list_activity(conn: sqlite3.Connection, since: str | None = None, card_id: i
         args.append(card_id)
     rows = conn.execute(sql + " ORDER BY id", args).fetchall()
     return [{**dict(r), "data": json.loads(r["data"])} for r in rows]
+
+
+def delete_card(conn: sqlite3.Connection, actor: str, card_id: int) -> dict:
+    """Remove a card, its comments and every dependency on it. The activity log keeps its history."""
+    row = get_row(conn, card_id)
+    card = to_json(conn, row)
+    conn.execute("DELETE FROM card_deps WHERE cardId = ? OR dependsOn = ?", (card_id, card_id))
+    conn.execute("DELETE FROM comments WHERE cardId = ?", (card_id,))
+    conn.execute(
+        "UPDATE cards SET position = position - 1 WHERE status = ? AND position > ?",
+        (row["status"], row["position"]),
+    )
+    conn.execute("DELETE FROM cards WHERE id = ?", (card_id,))
+    log_activity(conn, actor, "card.deleted", card_id, f"Deleted \"{card['title']}\"", card)
+    conn.commit()
+    return card

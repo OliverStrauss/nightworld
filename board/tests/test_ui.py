@@ -242,3 +242,21 @@ def test_epic_forms(browser, client, make_card):
     browser.post("/epics/1/edit", data={"title": "Boats!", "pitch": "", "status": "merged", "prUrl": ""})
     epic = client.get("/api/epics/1", headers=auth("oliver")).json()
     assert epic["title"] == "Boats!" and epic["status"] == "merged"
+
+
+def test_delete_button_on_card_page(browser, client, make_card):
+    client.post("/api/epics", json={"slug": "boats", "title": "Boats"}, headers=auth("oliver"))
+    make_card(title="loose")
+    make_card(title="oar", epicId=1)
+    assert "🗑 Delete" in browser.get("/cards/1").text
+    r = browser.post("/cards/1/delete", follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"] == "/"
+    r = browser.post("/cards/2/delete", follow_redirects=False)
+    assert r.headers["location"] == "/epics/1"
+    assert client.get("/api/cards", headers=auth("oliver")).json() == []
+
+
+def test_delete_needs_login(client, make_card):
+    make_card()
+    assert client.post("/cards/1/delete", follow_redirects=False).status_code == 303
+    assert client.get("/api/cards/1", headers=auth("oliver")).status_code == 200

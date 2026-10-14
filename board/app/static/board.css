@@ -177,3 +177,4 @@ button, .button {
 .split form { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
 .split small { flex: 1 1 14rem; }
 .pill.working { animation: pulse 1.6s ease-in-out infinite; }
+button.danger { background: var(--danger); color: #fff; }

@@ -231,6 +231,12 @@ async def save_card(
     return back_to(f"/cards/{card_id}")
 
 
+@router.post("/cards/{card_id}/delete")
+def delete_card(card_id: int, actor: str = Depends(login_required), conn: sqlite3.Connection = Depends(get_conn)):
+    card = cards.delete_card(conn, actor, card_id)
+    return back_to(f"/epics/{card['epicId']}" if card["epicId"] else "/")
+
+
 @router.post("/cards/{card_id}/comments")
 def comment(
     card_id: int, body: str = Form(""), actor: str = Depends(login_required), conn: sqlite3.Connection = Depends(get_conn)

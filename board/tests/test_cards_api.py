@@ -298,3 +298,28 @@ def test_reads_and_rejected_writes_are_not_logged(client, make_card, db_path):
     client.patch(f"/api/cards/{card['id']}", json={"title": "x"}, headers=auth("builder"))
     client.post("/api/cards", json={"title": "t", "type": "fix", "size": "S"}, headers=auth("reviewer"))
     assert len(activity(db_path)) == 1
+
+
+# ---- DELETE /api/cards/:id
+
+
+def test_oliver_deletes_a_card_and_everything_hanging_off_it(client, make_card, db_path):
+    a = make_card(title="a", status="ready")
+    b = make_card(title="b", status="ready", dependsOn=[a["id"]])
+    c = make_card(title="c", status="ready")
+    client.post(f"/api/cards/{a['id']}/comments", json={"body": "hi"}, headers=auth("reviewer"))
+
+    assert client.delete(f"/api/cards/{a['id']}", headers=auth("oliver")).status_code == 204
+    assert client.get(f"/api/cards/{a['id']}", headers=auth("oliver")).status_code == 404
+    assert client.get(f"/api/cards/{b['id']}", headers=auth("oliver")).json()["dependsOn"] == []
+    ready = client.get("/api/cards?status=ready", headers=auth("oliver")).json()
+    assert [(x["title"], x["position"]) for x in ready] == [("b", 1), ("c", 2)]
+    log = activity(db_path)
+    assert (log[-1]["actor"], log[-1]["type"], log[-1]["cardId"]) == ("oliver", "card.deleted", a["id"])
+    assert client.delete(f"/api/cards/{a['id']}", headers=auth("oliver")).status_code == 404
+
+
+@pytest.mark.parametrize("actor", ["builder", "reviewer", "groomer"])
+def test_only_oliver_deletes_cards(client, make_card, actor):
+    card = make_card()
+    assert client.delete(f"/api/cards/{card['id']}", headers=auth(actor)).status_code == 403
