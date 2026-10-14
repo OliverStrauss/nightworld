@@ -27,7 +27,7 @@ its criteria, it builds that phase on its own branch, and opens one PR.
 | Web framework | FastAPI + Uvicorn | Small, typed, built-in test client |
 | Storage | SQLite via the standard `sqlite3` module | One file, no server, easy backup |
 | Templates | Jinja2, server-rendered | No JavaScript build step |
-| Interactivity | htmx + SortableJS, vendored into `board/app/static/` | Drag to reorder without a frontend framework; works offline on the Pi |
+| Interactivity | Plain HTML forms + SortableJS (vendored into `board/app/static/`) and a few lines of `fetch` | Drag to reorder without a frontend framework; works offline on the Pi. htmx turned out not to be needed |
 | Tests | pytest + FastAPI `TestClient` | Fast; no network or browser needed |
 | Run | systemd service, bound to `127.0.0.1:8787` | Restarts on crash and reboot |
 | Access from phone | Tailscale (`tailscale serve`) | Never on the public internet |
@@ -49,7 +49,7 @@ board/
     api.py             JSON endpoints under /api
     ui.py              HTML pages
     templates/         Jinja2 templates
-    static/            CSS, htmx.min.js, Sortable.min.js, manifest, icons
+    static/            CSS, Sortable.min.js, manifest, icons
   tests/
     test_*.py
   deploy/
@@ -81,43 +81,43 @@ Each phase ends with its tests passing (`cd board && pytest`) and a PR. Do them 
 
 ### Phase 1: cards API (M)
 Goal: the runner can ask for work and nothing else is needed yet.
-- [ ] `pyproject.toml`, app skeleton, `db.py` creates all tables on start
-- [ ] Bearer auth with one token per actor (`oliver`, `builder`, `reviewer`, `groomer`), read from env; unknown token → 401
-- [ ] `GET /api/cards`, `GET /api/cards/:id`, `POST /api/cards`, `PATCH /api/cards/:id`, with the per-actor limits in README.md (→ 403)
-- [ ] `GET /api/cards/next` returns 204 on an empty board, and skips cards whose dependencies aren't met
-- [ ] Every write adds an `activity` row with the actor
-- [ ] Tests for each endpoint, each actor limit, and `next` with and without dependencies
+- [x] `pyproject.toml`, app skeleton, `db.py` creates all tables on start
+- [x] Bearer auth with one token per actor (`oliver`, `builder`, `reviewer`, `groomer`), read from env; unknown token → 401
+- [x] `GET /api/cards`, `GET /api/cards/:id`, `POST /api/cards`, `PATCH /api/cards/:id`, with the per-actor limits in README.md (→ 403)
+- [x] `GET /api/cards/next` returns 204 on an empty board, and skips cards whose dependencies aren't met
+- [x] Every write adds an `activity` row with the actor
+- [x] Tests for each endpoint, each actor limit, and `next` with and without dependencies
 
 ### Phase 2: night shift endpoints (M)
 Goal: `runner/nightly.sh` can run a full card against the board.
-- [ ] `POST /claim`, `POST /review` (PASS / FAIL / BLOCKED rules, two FAILs → blocked), `POST /events`, `POST /comments`, `GET /api/activity`
-- [ ] `effort` on cards, defaulting from size (S → low, M → medium)
-- [ ] `GET/PUT /api/settings/night`
-- [ ] Tests for every review rule, including FAIL putting the card back at position 1 of `ready`
-- [ ] A dry run: start the app locally, create a card with curl, and run the board calls `nightly.sh` makes (claim, PATCH to verifying, review). Paste the output in the PR.
+- [x] `POST /claim`, `POST /review` (PASS / FAIL / BLOCKED rules, two FAILs → blocked), `POST /events`, `POST /comments`, `GET /api/activity`
+- [x] `effort` on cards, defaulting from size (S → low, M → medium)
+- [x] `GET/PUT /api/settings/night`
+- [x] Tests for every review rule, including FAIL putting the card back at position 1 of `ready`
+- [x] A dry run: start the app locally, create a card with curl, and run the board calls `nightly.sh` makes (claim, PATCH to verifying, review). Paste the output in the PR.
 
 ### Phase 3: phone UI, read-only (M)
 Goal: Oliver can see the board on his phone.
-- [ ] Login page for `oliver` (password hash from env), session cookie
-- [ ] Kanban page: one column per status, scrolls sideways on a phone
-- [ ] Card page: goal, criteria, effort, PR link, latest review notes, comments, activity history
-- [ ] Web app manifest + icon so it can be added to the home screen
-- [ ] Tests: pages return 200 when logged in and redirect to login when not
+- [x] Login page for `oliver` (password hash from env), session cookie
+- [x] Kanban page: one column per status, scrolls sideways on a phone
+- [x] Card page: goal, criteria, effort, PR link, latest review notes, comments, activity history
+- [x] Web app manifest + icon so it can be added to the home screen
+- [x] Tests: pages return 200 when logged in and redirect to login when not
 
 ### Phase 4: phone UI, editing (M)
 Goal: Oliver can run the board from his phone without curl.
-- [ ] Create and edit cards using the `docs/task-cards.md` template (title, type, size, effort, goal, criteria list, notes, depends-on)
-- [ ] Drag to reorder `ready` (SortableJS + htmx); top card is built next
-- [ ] Move cards between columns, with the same rules as the API (only Oliver moves to `done` or out of `blocked`)
-- [ ] Night settings page: points per night, max cards, stop time, pause
-- [ ] Tests for each form handler
+- [x] Create and edit cards using the `docs/task-cards.md` template (title, type, size, effort, goal, criteria list, notes, depends-on)
+- [x] Drag to reorder `ready` (SortableJS); top card is built next
+- [x] Move cards between columns, with the same rules as the API (only Oliver moves to `done` or out of `blocked`)
+- [x] Night settings page: points per night, max cards, stop time, pause
+- [x] Tests for each form handler
 
 ### Phase 5: epics (M)
 Goal: big features can be split into cards that build on each other.
-- [ ] Epics table, API (`GET/POST/PATCH /api/epics`), `epicId` on cards
-- [ ] Epic page: its cards in order, a progress bar, branch and PR links
-- [ ] `/cards/next` treats a dependency as met when it's `done`, **or** in the same epic and its PR has merged into the epic branch (the reviewer's PASS + merge sets `mergedToEpic: true`)
-- [ ] Tests for epic dependency rules
+- [x] Epics table, API (`GET/POST/PATCH /api/epics`), `epicId` on cards
+- [x] Epic page: its cards in order, a progress bar, branch and PR links
+- [x] `/cards/next` treats a dependency as met when it's `done`, **or** in the same epic and its PR has merged into the epic branch (the reviewer's PASS + merge sets `mergedToEpic: true`)
+- [x] Tests for epic dependency rules
 
 ### Phase 6: world map page (M, after the game exports `world.json`)
 Goal: Oliver sees the whole world and taps a zone to see what it holds.

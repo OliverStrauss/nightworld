@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Activity{% endblock %}
+{% block main %}
+<section class="panel">
+  <h1>What happened</h1>
+  <ul class="log">
+    {% for a in activity %}
+    <li><span class="muted">{{ a.createdAt|when }}</span> <b>{{ a.actor }}</b>
+      {% if a.cardId %}<a href="/cards/{{ a.cardId }}">#{{ a.cardId }} {{ titles.get(a.cardId, "") }}</a>:{% endif %}
+      {{ a.message or a.type }}</li>
+    {% else %}<li class="muted">Nothing yet. Quiet night.</li>{% endfor %}
+  </ul>
+</section>
+{% endblock %}

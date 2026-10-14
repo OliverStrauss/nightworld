@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block main %}
+<section class="summary">
+  {% if night.paused %}
+    <span class="pill paused">⏸ Night shift paused</span>
+  {% else %}
+    <span class="pill">Tonight: up to {{ night.maxCards }} cards / {{ night.pointsPerNight }} pts, stop {{ night.stopTime }}</span>
+  {% endif %}
+  {% if next_card %}
+    <span class="pill next">Next up: <a href="/cards/{{ next_card.id }}">{{ next_card.title }}</a></span>
+  {% else %}
+    <span class="pill muted">Nothing buildable in Ready</span>
+  {% endif %}
+</section>
+<div class="kanban">
+  {% for status, name in COLUMNS %}
+  <section class="column status-{{ status }}">
+    <h2>{{ name }} <span class="count">{{ by_status[status]|length }}</span></h2>
+    <div class="cards" data-status="{{ status }}">
+      {% for c in by_status[status] %}{% include "_tile.html" %}{% endfor %}
+    </div>
+    {% if status == "ready" %}<p class="hint">Drag to reorder. The top card is built next.</p>{% endif %}
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="/static/Sortable.min.js"></script>
+<script>
+  document.querySelectorAll(".cards").forEach(function (list) {
+    Sortable.create(list, {
+      group: "cards",
+      animation: 150,
+      delay: 200,
+      delayOnTouchOnly: true,
+      onEnd: function (evt) {
+        if (evt.from === evt.to && evt.oldIndex === evt.newIndex) return;
+        fetch("/cards/" + evt.item.dataset.id + "/move", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({status: evt.to.dataset.status, position: evt.newIndex + 1})
+        }).then(function (r) {
+          if (!r.ok) return r.json().then(function (b) { alert(b.detail || "Couldn't move that card"); });
+        }).finally(function () { location.reload(); });
+      }
+    });
+  });
+</script>
+{% endblock %}

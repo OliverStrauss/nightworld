@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}#{{ card.id }} {{ card.title }}{% endblock %}
+{% block main %}
+<article class="panel card-page status-{{ card.status }}">
+  <p class="crumbs"><a href="/">Board</a> · <span class="status-tag">{{ STATUS_NAMES[card.status] }}</span>{% if epic %} · <a href="/epics/{{ epic.id }}">⛵ {{ epic.title }}</a>{% endif %}</p>
+  <h1>{{ card.title }}</h1>
+  <p class="chips">
+    <span class="chip">#{{ card.id }}</span>
+    <span class="chip">{{ card.type }}</span>
+    <span class="chip effort-{{ card.effort }}">{{ card.size }} · {{ card.effort }} ({{ POINTS[card.effort] }} pt{{ "s" if POINTS[card.effort] != 1 }})</span>
+    {% if card.attempts %}<span class="chip">attempt {{ card.attempts }}</span>{% endif %}
+    {% if card.consecutiveFails %}<span class="chip fail">✗{{ card.consecutiveFails }} in a row</span>{% endif %}
+    {% if card.mergedToEpic %}<span class="chip epic">merged into epic</span>{% endif %}
+  </p>
+  <p><a class="button ghost" href="/cards/{{ card.id }}/edit">Edit</a></p>
+
+  {% if card.goal %}<h2>Goal</h2><p class="prose">{{ card.goal }}</p>{% endif %}
+  {% if card.criteria %}
+  <h2>Acceptance criteria</h2>
+  <ul class="criteria">{% for c in card.criteria %}<li>{{ c }}</li>{% endfor %}</ul>
+  {% endif %}
+  {% if card.notes %}<h2>Notes</h2><p class="prose">{{ card.notes }}</p>{% endif %}
+  {% if deps %}
+  <h2>Depends on</h2>
+  <ul>{% for d in deps %}<li><a href="/cards/{{ d.id }}">#{{ d.id }} {{ d.title }}</a> <span class="status-tag status-{{ d.status }}">{{ STATUS_NAMES[d.status] }}</span>{% if d.mergedToEpic %} · merged into epic{% endif %}</li>{% endfor %}</ul>
+  {% endif %}
+
+  <h2>Build</h2>
+  <dl class="facts">
+    <dt>Branch</dt><dd>{{ card.branch or "—" }}</dd>
+    <dt>Pull request</dt><dd>{% if card.prUrl and card.prUrl.startswith("https://") %}<a href="{{ card.prUrl }}">{{ card.prUrl }}</a>{% else %}{{ card.prUrl or "—" }}{% endif %}</dd>
+  </dl>
+  {% if card.lastReview %}<h2>Latest review</h2><pre class="review">{{ card.lastReview }}</pre>{% endif %}
+
+  <form class="move" method="post" action="/cards/{{ card.id }}/move">
+    <label>Move to
+      <select name="status">
+        {% for s, name in COLUMNS %}<option value="{{ s }}" {{ "selected" if s == card.status }}>{{ name }}</option>{% endfor %}
+      </select>
+    </label>
+    <button>Move</button>
+  </form>
+
+  <h2 id="comments">Comments</h2>
+  {% for c in comments %}
+    <div class="comment"><b>{{ c.author }}</b> <span class="muted">{{ c.createdAt|when }}</span><p class="prose">{{ c.body }}</p></div>
+  {% else %}<p class="muted">No comments yet.</p>{% endfor %}
+  <form method="post" action="/cards/{{ card.id }}/comments">
+    <textarea name="body" rows="2" placeholder="Say something to the goblins…" required></textarea>
+    <button>Comment</button>
+  </form>
+
+  <h2>History</h2>
+  <ul class="log">
+    {% for a in activity %}<li><span class="muted">{{ a.createdAt|when }}</span> <b>{{ a.actor }}</b> {{ a.message or a.type }}</li>{% endfor %}
+  </ul>
+</article>
+{% endblock %}

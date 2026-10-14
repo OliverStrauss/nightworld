@@ -1,9 +1,30 @@
 # Task board
 
 A small web app on the Pi: a kanban board you use from your phone, plus a JSON API that the
-nightly runner and the agents use. **Not built yet** — this file is the contract it has to meet,
-so the runner and agents can be written against it now. The build order, stack and design
-decisions are in [PLAN.md](PLAN.md).
+nightly runner and the agents use. This file is the contract it meets. The build order, stack
+and design decisions are in [PLAN.md](PLAN.md).
+
+## Run it on your computer
+
+```bash
+cd board
+python3 -m venv .venv && .venv/bin/pip install -e '.[test]'
+.venv/bin/pytest                                   # all green?
+
+.venv/bin/python -m app.auth                       # type a password, copy the hash it prints
+export BOARD_PASSWORD_HASH='pbkdf2_sha256$…'       # single quotes: the hash contains $
+export BOARD_SECRET="$(python3 -c 'import secrets; print(secrets.token_hex(32))')"
+export BOARD_TOKEN_OLIVER=… BOARD_TOKEN_BUILDER=… BOARD_TOKEN_REVIEWER=… BOARD_TOKEN_GROOMER=…
+export BOARD_DB=~/nightworld-board.db              # default: board.db in the current folder
+.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8787
+```
+
+Open <http://127.0.0.1:8787> and log in. To try it on your phone, either run uvicorn with
+`--host 0.0.0.0` and open `http://<your-computer's-LAN-IP>:8787` on the same Wi-Fi, or use
+`tailscale serve 8787`. Then "Add to Home Screen". Running it permanently on the Pi is the
+"Deploy" step in PLAN.md.
+
+The API docs (every endpoint, try-it-out) are at <http://127.0.0.1:8787/docs>.
 
 ## Requirements
 

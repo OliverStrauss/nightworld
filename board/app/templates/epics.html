@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Epics{% endblock %}
+{% block main %}
+<section class="panel">
+  <h1>Epics</h1>
+  <p class="muted">Big features built over several nights on their own <code>epic/…</code> branch.</p>
+  {% for e in epics %}
+  <a class="epic-row status-{{ e.status }}" href="/epics/{{ e.id }}">
+    <b>{{ e.title }}</b> <span class="chip">{{ e.status }}</span>
+    <span class="progress"><span style="width: {{ (100 * e.done / e.cardIds|length) if e.cardIds else 0 }}%"></span></span>
+    <small class="muted">{{ e.done }} of {{ e.cardIds|length }} cards done</small>
+  </a>
+  {% else %}<p class="muted">No epics yet.</p>{% endfor %}
+</section>
+<form class="panel" method="post" action="/epics">
+  <h2>New epic</h2>
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  <div class="row">
+    <label>Title <input name="title" value="{{ form.title or '' }}" placeholder="Fishing minigame" required></label>
+    <label>Slug <input name="slug" value="{{ form.slug or '' }}" placeholder="fishing" pattern="[a-z0-9]+(-[a-z0-9]+)*" required></label>
+  </div>
+  <label>Pitch <textarea name="pitch" rows="2" placeholder="Cast a line, catch a boot.">{{ form.pitch or '' }}</textarea></label>
+  <label>Draft PR link <input name="prUrl" value="{{ form.prUrl or '' }}"></label>
+  <p class="actions"><button>Create epic</button></p>
+</form>
+{% endblock %}

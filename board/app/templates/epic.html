@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{{ epic.title }}{% endblock %}
+{% block main %}
+<article class="panel">
+  <p class="crumbs"><a href="/epics">Epics</a> · <span class="chip">{{ epic.status }}</span></p>
+  <h1>⛵ {{ epic.title }}</h1>
+  {% if epic.pitch %}<p class="prose">{{ epic.pitch }}</p>{% endif %}
+  <span class="progress big"><span style="width: {{ (100 * done / epic.cards|length) if epic.cards else 0 }}%"></span></span>
+  <p class="muted">{{ done }} of {{ epic.cards|length }} cards done</p>
+  <dl class="facts">
+    <dt>Branch</dt><dd><code>{{ epic.branch }}</code></dd>
+    <dt>Pull request</dt><dd>{% if epic.prUrl and epic.prUrl.startswith("https://") %}<a href="{{ epic.prUrl }}">{{ epic.prUrl }}</a>{% else %}{{ epic.prUrl or "—" }}{% endif %}</dd>
+  </dl>
+  <h2>Cards, in build order</h2>
+  <ol class="epic-cards">
+    {% for c in epic.cards %}
+    <li><a href="/cards/{{ c.id }}">#{{ c.id }} {{ c.title }}</a> <span class="status-tag status-{{ c.status }}">{{ STATUS_NAMES[c.status] }}</span>{% if c.mergedToEpic %} <span class="chip epic">merged</span>{% endif %}</li>
+    {% else %}<li class="muted">No cards yet.</li>{% endfor %}
+  </ol>
+  <p><a class="button" href="/cards/new?epic={{ epic.id }}">＋ Card in this epic</a></p>
+</article>
+<form class="panel" method="post" action="/epics/{{ epic.id }}/edit">
+  <h2>Edit epic</h2>
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  <label>Title <input name="title" value="{{ epic.title }}" required></label>
+  <label>Pitch <textarea name="pitch" rows="2">{{ epic.pitch }}</textarea></label>
+  <div class="row">
+    <label>Status
+      <select name="status">{% for s in ["open", "merged", "dropped"] %}<option {{ "selected" if epic.status == s }}>{{ s }}</option>{% endfor %}</select>
+    </label>
+    <label>Draft PR link <input name="prUrl" value="{{ epic.prUrl or '' }}"></label>
+  </div>
+  <p class="actions"><button>Save</button></p>
+</form>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% set hide_nav = true %}
+{% block main %}
+<form class="panel login" method="post" action="/login">
+  <h1>🌙 NightWorld board</h1>
+  <p class="muted">The goblins have been busy. Log in to see what they built.</p>
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  <input type="hidden" name="next" value="{{ next }}">
+  <label>Password <input type="password" name="password" autocomplete="current-password" autofocus required></label>
+  <button>Log in</button>
+</form>
+{% endblock %}
