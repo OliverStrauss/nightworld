@@ -28,10 +28,10 @@ how far the zone is from Harbor Town. New zones pick a tier and take its numbers
 |---|---|---|---|
 | 0 | — | none (safe) | coast, town |
 | 1 | 1–3 | green / yellow | meadow, beach, light forest |
-| 2 | 4–7 **(decide)** | yellow / orange | forest, hills, swamp edge |
-| 3 | 8–12 **(decide)** | orange | swamp, desert, canyon |
-| 4 | 13–17 **(decide)** | purple | snow, deep forest, ruins |
-| 5 | 18–20 **(decide)** | red | volcano, the very weird stuff |
+| 2 | 4–7 | yellow / orange | forest, hills, swamp edge |
+| 3 | 8–12  | orange | desert, canyon |
+| 4 | 13–17  | purple | snow, deep forest, ruins |
+| 5 | 18–20  | red | volcano, the very weird stuff |
 
 How tiers sit on the map:
 - **Tiers are placed freely.** Regions can be any shape, wind along a valley, or form a dead
