@@ -40,10 +40,28 @@ exec > >(tee -a "$WORK/run.log") 2>&1
 log() { echo "[$(date +%T)] $*"; }
 
 # Only one run at a time, even if cron fires twice or you run it by hand.
-exec 9>"$LOG_DIR/.lock"
-if ! flock -n 9; then
-  log "Another run is in progress; exiting."
+# macOS has no flock(1); fall back to an atomic mkdir lock there.
+if command -v flock >/dev/null; then
+  exec 9>"$LOG_DIR/.lock"
+  if ! flock -n 9; then
+    log "Another run is in progress; exiting."
+    exit 0
+  fi
+elif mkdir "$LOG_DIR/.lock.d" 2>/dev/null; then
+  trap 'rmdir "$LOG_DIR/.lock.d"' EXIT
+else
+  log "Another run is in progress (or a stale $LOG_DIR/.lock.d); exiting."
   exit 0
+fi
+
+# macOS has no timeout(1); Homebrew coreutils installs it as gtimeout.
+if ! command -v timeout >/dev/null; then
+  if command -v gtimeout >/dev/null; then
+    timeout() { gtimeout "$@"; }
+  else
+    log "No timeout(1) or gtimeout found (brew install coreutils); running without time limits."
+    timeout() { shift; "$@"; }
+  fi
 fi
 
 board() { # board <token> <curl args...>
@@ -85,7 +103,7 @@ if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
   log "Continuing existing branch $BRANCH (retry after review feedback)"
   git checkout -q -B "$BRANCH" "origin/$BRANCH"
 else
-  git checkout -q -b "$BRANCH"
+  git checkout -q -B "$BRANCH"   # -B: a local branch may linger from a run that never pushed
 fi
 
 CARD_TEXT=$(jq -r '
@@ -106,13 +124,19 @@ timeout "$BUILDER_TIMEOUT" claude -p \
   --permission-prompts none \
   --max-turns "$BUILDER_MAX_TURNS" \
   --allowedTools "Read" "Write" "Edit" "Glob" "Grep" \
-    "Bash(git status *)" "Bash(git diff *)" "Bash(git log *)" "Bash(git add *)" \
+    "Bash(git status)" "Bash(git status *)" "Bash(git diff)" "Bash(git diff *)" "Bash(git log *)" "Bash(git add *)" \
     "Bash(git commit *)" "Bash(git push origin night/*)" "Bash(git push -u origin night/*)" \
     "Bash(gh pr create *)" "Bash(gh pr edit *)" "Bash(gh pr view *)" "Bash(gh pr list *)" \
     "Bash(python3 tools/check_assets.py)" "Bash(python3 tools/new_guid.py *)" \
     "Bash(mkdir *)" \
   --output-format json \
   "Branch: $BRANCH (already checked out). Implement this card, push the branch, and open or update the PR.
+
+Shell rules: nobody can approve commands, so anything not on the allowlist is denied. Run one plain
+command per Bash call from the repo root, exactly in these forms: git status/diff/log/add/commit,
+git push -u origin $BRANCH, gh pr create/edit/view/list, python3 tools/check_assets.py,
+python3 tools/new_guid.py, mkdir. No cd, git -C, absolute paths, pipes, ;, && or echo.
+If a command is denied, rephrase it to one of those forms; don't give up.
 
 $CARD_TEXT" > "$WORK/builder.json"
 builder_exit=$?

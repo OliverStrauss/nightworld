@@ -33,6 +33,12 @@ chmod +x ~/nightworld-runner/runner/nightly.sh
 
 Then add the cron line from `crontab.example` (pointing at `~/nightworld-runner/runner/nightly.sh`).
 
+## Running on a Mac instead
+
+macOS lacks `flock` and `timeout`. The script falls back to a `mkdir` lock, and to `gtimeout`
+from `brew install coreutils`; without it the run has no time limits. Install the other tools with
+`brew install git-lfs jq gh`.
+
 ## Run it by hand
 
 ```bash
