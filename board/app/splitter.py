@@ -42,7 +42,7 @@ Rules:
 - Fit the world in docs/world.md. Decide the epic's World fit once (where, tier and levels,
   existing IDs it reuses, what it adds to canon) and start every card's notes with
   "World fit: ..." so all cards agree. If the pitch can't say where or which tier, pick the
-  most sensible ring and say so in the first card's notes.
+  most sensible place and tier and say so in the first card's notes.
 - `dependsOn` lists the 1-based numbers of earlier cards in YOUR list that must be built first.
 
 Do not change any files and do not call the board API. Reply with only a JSON object, no prose:

@@ -15,7 +15,7 @@ and `docs/content-yaml.md` before adding or editing any content asset.
 | `game/Assets/_Project/` | Everything we own: scripts, data, prefabs, tests |
 | `game/Assets/ThirdParty/` | Asset packs (Kenney etc.). Read-only for agents |
 | `docs/design.md` | The game: pitch, pillars, core loop, progression, art direction |
-| `docs/world.md` | The world's canon: map layout, danger rings, what exists, naming. Oliver owns it |
+| `docs/world.md` | The world's canon: map layout, danger tiers, what exists, naming. Oliver owns it |
 | `docs/architecture.md` | Code layout, assemblies, why zones are data |
 | `docs/content-yaml.md` | How to write `.asset` + `.meta` files by hand |
 | `docs/task-cards.md` | Card template and sizing (S or M only) |

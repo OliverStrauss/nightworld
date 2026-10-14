@@ -16,7 +16,7 @@ For each card in `backlog` (via the board API, see `board/README.md`):
 4. Does it contradict the design doc? Flag it.
 5. Does it add to the world? Then it needs a **World fit** line (see `docs/world.md`): where,
    which tier and levels, which existing IDs it reuses, and what it adds to canon. Flag levels,
-   names or places that break the danger rings or naming rules.
+   names or places that break the danger tiers or naming rules.
 
 Write your proposals as a comment on each card (`POST /api/cards/:id/comments`) with author
 `groomer`. Do not change a card's status. Oliver decides what becomes Ready.

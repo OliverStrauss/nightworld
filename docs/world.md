@@ -13,30 +13,39 @@
 
 - One seamless world, no portals. Each zone has a place on the world map and a biome; the map
   is generated from zone data, never drawn by hand.
-- **Harbor Town is the centre of safety.** It sits on the coast. Everything gets harder the
-  further you walk from it, so a player can read danger from distance and colour alone.
+- **Harbor Town is the safe start.** It sits on the coast. The world is a patchwork of
+  regions, not circles around the town: a hard region can sit close to town and an easy one
+  far away, as long as the player can read the danger from colour before walking in.
 - Every zone touches at least one other zone. No islands you can't walk to.
-- **(decide)** Which side is the sea? Default until decided: the sea is south of Harbor Town,
-  and the wilderness opens up to the north, east and west.
+- The sea is south of Harbor Town, and the wilderness opens up to the north, east and west.
 
-## Danger rings
+## Danger tiers
 
-Difficulty is set by distance from Harbor Town. Each ring has a tier, a level band, a danger
-colour and the biomes that fit it. New zones pick a ring first and take its numbers.
+Every zone has a danger tier. The tier sets its level band and danger colour; it is not tied to
+how far the zone is from Harbor Town. New zones pick a tier and take its numbers.
 
-| Tier | Ring | Player levels | Danger colour | Biomes that fit |
-|---|---|---|---|---|
-| 0 | Town | — | none (safe) | coast, town |
-| 1 | Next to town | 1–3 | green / yellow | meadow, beach, light forest |
-| 2 | Near | 4–7 **(decide)** | yellow / orange | forest, hills, swamp edge |
-| 3 | Middle | 8–12 **(decide)** | orange | swamp, desert, canyon |
-| 4 | Far | 13–17 **(decide)** | purple | snow, deep forest, ruins |
-| 5 | Edge | 18–20 **(decide)** | red | volcano, the very weird stuff |
+| Tier | Player levels | Danger colour | Biomes that fit |
+|---|---|---|---|
+| 0 | — | none (safe) | coast, town |
+| 1 | 1–3 | green / yellow | meadow, beach, light forest |
+| 2 | 4–7 **(decide)** | yellow / orange | forest, hills, swamp edge |
+| 3 | 8–12 **(decide)** | orange | swamp, desert, canyon |
+| 4 | 13–17 **(decide)** | purple | snow, deep forest, ruins |
+| 5 | 18–20 **(decide)** | red | volcano, the very weird stuff |
+
+How tiers sit on the map:
+- **Tiers are placed freely.** Regions can be any shape, wind along a valley, or form a dead
+  end. Directions don't have to be fair: one road out of town can get hard fast while another
+  stays gentle for a long way.
+- **No cliff edges.** Zones that touch differ by at most one tier, unless the border is made
+  readable on purpose (a sign, a colour change, a scary-looking gate) so walking in is a choice.
+- **Always a way up.** From Harbor Town there is a walkable route that climbs one tier at a time
+  to every zone.
 
 Rules of thumb that follow from the table:
 - An enemy's level fits the band of every zone it spawns in.
-- Gear you can buy in a town is aimed at the ring just outside it.
-- A reward off the path (chest, NPC, viewpoint) can be one tier better than the ring it's in.
+- Gear you can buy in a town is aimed at the tiers of the zones next to it.
+- A reward off the path (chest, NPC, viewpoint) can be one tier better than the zone it's in.
 
 ## What exists today
 
@@ -76,8 +85,8 @@ NPC proposes one here rather than inventing a backstory in code or data.
 
 Every epic and every card that adds to the world answers these in a **World fit** line:
 
-1. **Where?** Which zone, or which ring and which side of town for a new zone.
-2. **Which tier and levels?** Taken from the danger rings table.
+1. **Where?** Which zone, or which existing zones a new zone borders.
+2. **Which tier and levels?** Taken from the danger tiers table, within one tier of its neighbours.
 3. **What does it reuse?** Existing IDs it builds on (`harbor-town`, `meadow-slime`…).
 4. **What does it add to canon?** New IDs and names, and any new fact this file would need.
 
@@ -86,5 +95,5 @@ If an epic can't answer 1 and 2, it isn't ready to split into cards.
 ## Canon proposals
 
 Agents: don't edit this file. Put proposals in your PR body or card notes under a
-"Canon proposals" heading, for example "Add `bramble-woods` to the tier 2 ring, west of
-`meadow-fields`." Oliver copies the ones he wants into the sections above.
+"Canon proposals" heading, for example "Add `bramble-woods`, tier 2, bordering
+`meadow-fields` on its west side." Oliver copies the ones he wants into the sections above.
