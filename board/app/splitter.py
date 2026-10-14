@@ -84,10 +84,10 @@ def run_claude(prompt: str) -> str:
     cmd = shlex.split(os.environ.get("BOARD_CLAUDE_CMD", "claude")) + [
         "-p", "--agent", "groomer", "--output-format", "json",
         "--permission-mode", "dontAsk", "--allowedTools", "Read", "Glob", "Grep",
-        prompt,
     ]
+    # The prompt goes on stdin: --allowedTools takes every argument after it as a tool name.
     done = subprocess.run(
-        cmd, cwd=repo, capture_output=True, text=True,
+        cmd, input=prompt, cwd=repo, capture_output=True, text=True,
         timeout=int(os.environ.get("BOARD_SPLIT_TIMEOUT", "900")),
     )
     if done.returncode != 0:

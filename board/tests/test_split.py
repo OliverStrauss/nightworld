@@ -124,7 +124,7 @@ def test_run_claude_calls_the_groomer_read_only(monkeypatch, tmp_path):
         stderr = ""
 
     def fake_run(cmd, **kw):
-        seen["cmd"], seen["cwd"] = cmd, kw["cwd"]
+        seen["cmd"], seen["cwd"], seen["input"] = cmd, kw["cwd"], kw["input"]
         return Done()
 
     monkeypatch.setattr(splitter.subprocess, "run", fake_run)
@@ -132,4 +132,5 @@ def test_run_claude_calls_the_groomer_read_only(monkeypatch, tmp_path):
     assert splitter.run_claude("split it") == "hello"
     assert seen["cwd"] == str(tmp_path)
     assert seen["cmd"][:4] == ["claude", "-p", "--agent", "groomer"]
-    assert "Write" not in seen["cmd"] and "Bash" not in seen["cmd"] and seen["cmd"][-1] == "split it"
+    assert "Write" not in seen["cmd"] and "Bash" not in seen["cmd"]
+    assert seen["input"] == "split it" and "split it" not in seen["cmd"]  # on stdin, not swallowed by --allowedTools
