@@ -52,8 +52,8 @@ Logs for each run go to `$LOG_DIR/<date_time>/`: `run.log`, `card.txt`, `builder
 
 - The builder can only use the tools listed in `nightly.sh` (`--allowedTools`); anything else
   is denied, not prompted (`--permission-prompts none`). It can push only to `night/*` branches.
-- `.claude/settings.json` denies edits to scenes and `ThirdParty/`, and force pushes.
-- CI's scope check fails any `night/*` PR that touches scenes, ThirdParty, CI or agent config.
+- `.claude/settings.json` denies edits to `ThirdParty/`, and force pushes.
+- CI's scope check fails any `night/*` PR that touches ThirdParty, CI or agent config.
 - The reviewer is read-only and runs in a separate session from the builder.
 - `flock` stops two runs from overlapping. Timeouts stop a stuck run.
 - Nothing is merged automatically. You merge.

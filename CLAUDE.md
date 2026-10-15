@@ -49,9 +49,9 @@ never *how much*: fun ideas that don't fit the task go under "Follow-ups".
 2. **Content is data.** New items, enemies, shops and zones are ScriptableObject assets in
    `game/Assets/_Project/Data/`. You can't run Unity, so write the `.asset` YAML and its
    `.meta` directly — follow `docs/content-yaml.md` exactly. Do not hard-code content in C#.
-3. **Never hand-edit scene files** (`*.unity`) or prefab YAML for layout. Zones are assembled
-   at runtime by `ZoneBuilder` from a `ZoneDefinition`. If a card seems to require a scene
-   edit, stop and say so in the PR.
+3. **Scene files (`*.unity`) may be edited when a card needs it.** Prefer building zones at
+   runtime with `ZoneBuilder` from a `ZoneDefinition`. When you do edit a scene, change only
+   what the card needs, keep every existing fileID and GUID, and say what you changed in the PR.
 4. **Never edit anything under `game/Assets/ThirdParty/`.** Use those assets; don't change them.
 5. **Every new file or folder under `game/Assets` needs a `.meta`** with a fresh GUID from
    `python3 tools/new_guid.py` (copy the format of an existing meta of the same kind).
