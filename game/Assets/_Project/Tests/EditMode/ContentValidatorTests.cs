@@ -3,6 +3,8 @@ using System.Linq;
 using NightWorld.Core;
 using NightWorld.Data;
 using NightWorld.EditorTools;
+using NightWorld.Progression;
+using NightWorld.World;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -23,7 +25,7 @@ namespace NightWorld.Tests
         [Test]
         public void AllProjectContent_IsValid()
         {
-            var issues = ContentValidator.Validate(ContentValidator.LoadAllDefinitions());
+            var issues = ContentValidator.ValidateProject();
             var errors = issues.Where(i => i.Severity == ContentValidator.Severity.Error).ToList();
 
             Assert.IsEmpty(errors, "Content errors:\n" + ContentValidator.Format(errors));
@@ -91,6 +93,60 @@ namespace NightWorld.Tests
             town.enemySpawns.Add(new EnemySpawn { enemy = enemy, position = Vector3.zero, count = 1 });
 
             AssertHasError(new Definition[] { gel, enemy, town }, "towns must not have enemy spawns");
+        }
+
+        [Test]
+        public void ValidGameConfig_HasNoErrors()
+        {
+            Assert.IsEmpty(ConfigErrors(Config()));
+        }
+
+        [Test]
+        public void GameConfigWithMissingReferences_IsError()
+        {
+            var config = Config();
+            config.startZone = null;
+            config.progressionSettings = null;
+
+            var errors = ConfigErrors(config);
+
+            Assert.IsTrue(errors.Any(e => e.Contains("startZone is missing")), string.Join("\n", errors));
+            Assert.IsTrue(errors.Any(e => e.Contains("progressionSettings is missing")), string.Join("\n", errors));
+        }
+
+        [Test]
+        public void TwoGameConfigs_IsError()
+        {
+            var errors = ConfigErrors(Config(), Config());
+
+            Assert.IsTrue(errors.Any(e => e.Contains("2 GameConfig assets")), string.Join("\n", errors));
+        }
+
+        [Test]
+        public void NoGameConfig_IsError()
+        {
+            var errors = ConfigErrors();
+
+            Assert.IsTrue(errors.Any(e => e.Contains("no GameConfig asset")), string.Join("\n", errors));
+        }
+
+        private static List<string> ConfigErrors(params GameConfig[] configs)
+        {
+            return ContentValidator.ValidateGameConfigs(configs)
+                .Where(i => i.Severity == ContentValidator.Severity.Error)
+                .Select(i => i.Message)
+                .ToList();
+        }
+
+        private GameConfig Config()
+        {
+            var settings = ScriptableObject.CreateInstance<ProgressionSettings>();
+            created.Add(settings);
+            var config = ScriptableObject.CreateInstance<GameConfig>();
+            config.startZone = Zone("test-zone");
+            config.progressionSettings = settings;
+            created.Add(config);
+            return config;
         }
 
         private static void AssertHasError(IEnumerable<Definition> defs, string fragment)

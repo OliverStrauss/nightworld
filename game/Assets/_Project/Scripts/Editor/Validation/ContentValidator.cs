@@ -55,6 +55,45 @@ namespace NightWorld.EditorTools
                 .ToList();
         }
 
+        public static List<GameConfig> LoadAllGameConfigs()
+        {
+            return AssetDatabase.FindAssets("t:GameConfig", new[] { DataFolder })
+                .Select(guid => AssetDatabase.GUIDToAssetPath(guid))
+                .Select(path => AssetDatabase.LoadAssetAtPath<GameConfig>(path))
+                .Where(c => c != null)
+                .ToList();
+        }
+
+        /// <summary>Everything under Data/: definitions plus the single GameConfig.</summary>
+        public static List<Issue> ValidateProject()
+        {
+            var issues = Validate(LoadAllDefinitions());
+            issues.AddRange(ValidateGameConfigs(LoadAllGameConfigs()));
+            return issues;
+        }
+
+        /// <summary>GameConfig is not a Definition, so it's checked here: exactly one, no missing references.</summary>
+        public static List<Issue> ValidateGameConfigs(IEnumerable<GameConfig> configs)
+        {
+            var issues = new List<Issue>();
+            var all = configs.Where(c => c != null).ToList();
+
+            if (all.Count == 0)
+                issues.Add(Error(DataFolder, "no GameConfig asset; Boot needs exactly one (Data/game-config.asset)."));
+            else if (all.Count > 1)
+                issues.Add(Error(DataFolder, $"{all.Count} GameConfig assets; Boot needs exactly one."));
+
+            foreach (var config in all)
+            {
+                string path = AssetDatabase.GetAssetPath(config);
+                string label = string.IsNullOrEmpty(path) ? $"GameConfig '{config.name}'" : path;
+                if (config.startZone == null) issues.Add(Error(label, "startZone is missing."));
+                if (config.progressionSettings == null) issues.Add(Error(label, "progressionSettings is missing."));
+            }
+
+            return issues;
+        }
+
         public static List<Issue> Validate(IEnumerable<Definition> definitions)
         {
             var issues = new List<Issue>();
@@ -203,7 +242,7 @@ namespace NightWorld.EditorTools
         [MenuItem("NightWorld/Validate Content")]
         public static void ValidateFromMenu()
         {
-            var issues = Validate(LoadAllDefinitions());
+            var issues = ValidateProject();
             Report(issues);
             if (issues.All(i => i.Severity != Severity.Error))
                 Debug.Log("[ContentValidator] No errors.");
@@ -215,7 +254,7 @@ namespace NightWorld.EditorTools
             int exitCode = 0;
             try
             {
-                var issues = Validate(LoadAllDefinitions());
+                var issues = ValidateProject();
                 Report(issues);
                 exitCode = issues.Any(i => i.Severity == Severity.Error) ? 1 : 0;
             }
