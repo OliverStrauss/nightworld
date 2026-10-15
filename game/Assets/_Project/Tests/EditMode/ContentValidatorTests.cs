@@ -3,6 +3,7 @@ using System.Linq;
 using NightWorld.Core;
 using NightWorld.Data;
 using NightWorld.EditorTools;
+using NightWorld.Player;
 using NightWorld.Progression;
 using NightWorld.World;
 using NUnit.Framework;
@@ -178,11 +179,13 @@ namespace NightWorld.Tests
             var config = Config();
             config.startZone = null;
             config.progressionSettings = null;
+            config.playerSettings = null;
 
             var errors = ConfigErrors(config);
 
             Assert.IsTrue(errors.Any(e => e.Contains("startZone is missing")), string.Join("\n", errors));
             Assert.IsTrue(errors.Any(e => e.Contains("progressionSettings is missing")), string.Join("\n", errors));
+            Assert.IsTrue(errors.Any(e => e.Contains("playerSettings is missing")), string.Join("\n", errors));
         }
 
         [Test]
@@ -213,9 +216,12 @@ namespace NightWorld.Tests
         {
             var settings = ScriptableObject.CreateInstance<ProgressionSettings>();
             created.Add(settings);
+            var player = ScriptableObject.CreateInstance<PlayerSettings>();
+            created.Add(player);
             var config = ScriptableObject.CreateInstance<GameConfig>();
             config.startZone = Zone("test-zone");
             config.progressionSettings = settings;
+            config.playerSettings = player;
             created.Add(config);
             return config;
         }

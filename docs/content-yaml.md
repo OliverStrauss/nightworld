@@ -34,6 +34,7 @@ Never reuse or change an existing GUID; every reference to that asset would brea
 | `ShopDefinition` | `8cf633378040821de1d7b5a95040d4dc` |
 | `ZoneDefinition` | `c46237c3d1255c7dc44973e80aaf38dc` |
 | `ProgressionSettings` | `8fdb4a4428ded21f6af0aa55a168ace4` |
+| `PlayerSettings` | `ed6698ab44cf4c73b2a231c1c0468590` |
 
 ```yaml
   m_Script: {fileID: 11500000, guid: <script guid from the table>, type: 3}
