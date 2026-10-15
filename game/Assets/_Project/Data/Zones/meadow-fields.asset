@@ -25,6 +25,7 @@ MonoBehaviour:
     noiseScale: 0.025
     seed: 7
     vertexSpacing: 2
+    edgeBlend: 12
   playerSpawn: {x: 0, y: 0, z: -55}
   props:
   - name: bush-1

@@ -25,6 +25,7 @@ MonoBehaviour:
     noiseScale: 0.04
     seed: 3
     vertexSpacing: 2
+    edgeBlend: 12
   playerSpawn: {x: 0, y: 0, z: -10}
   props:
   - name: house-west
@@ -78,3 +79,6 @@ MonoBehaviour:
   - name: world-overview
     position: {x: 0, y: 140, z: -110}
     lookAt: {x: 0, y: 0, z: 60}
+  - name: north-seam
+    position: {x: 6, y: 6, z: 22}
+    lookAt: {x: 0, y: 0, z: 50}
