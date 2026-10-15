@@ -20,7 +20,7 @@ namespace NightWorld.World
         /// <summary>The "World" root: the start zone plus every zone linked from it.</summary>
         public GameObject WorldRoot { get; private set; }
 
-        /// <summary>The hero, spawned in Start when config has playerSettings.</summary>
+        /// <summary>The hero, spawned in Start when config has playerSettings and progressionSettings.</summary>
         public PlayerController Player { get; private set; }
 
         /// <summary>config.startZone when config is set, otherwise the old startZone field.</summary>
@@ -50,6 +50,11 @@ namespace NightWorld.World
                 Debug.LogWarning("[GameBootstrap] No playerSettings in the GameConfig; no player spawned.");
                 return;
             }
+            if (config.progressionSettings == null)
+            {
+                Debug.LogWarning("[GameBootstrap] No progressionSettings in the GameConfig; no player spawned.");
+                return;
+            }
 
             var marker = WorldRoot.transform.Find($"Zone_{zone.id}/PlayerSpawn");
             if (marker == null)
@@ -58,7 +63,7 @@ namespace NightWorld.World
                 return;
             }
 
-            Player = PlayerSpawner.Spawn(marker, settings);
+            Player = PlayerSpawner.Spawn(marker, settings, config.progressionSettings);
             Player.gameObject.AddComponent<FollowCamera>();
         }
     }

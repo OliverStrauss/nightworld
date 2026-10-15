@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using NightWorld.Data;
 using NightWorld.Player;
+using NightWorld.Progression;
 using NightWorld.World;
 using NUnit.Framework;
 using UnityEngine;
@@ -42,6 +43,7 @@ namespace NightWorld.Tests
             var config = ScriptableObject.CreateInstance<GameConfig>();
             config.startZone = zone;
             config.playerSettings = MakeSettings();
+            config.progressionSettings = MakeProgressionSettings();
             created.Add(config);
             var cam = MakeMainCamera();
 
@@ -68,6 +70,10 @@ namespace NightWorld.Tests
             Color color = player.GetComponentInChildren<MeshRenderer>().sharedMaterial.color;
             Assert.Greater(color.b, 0.8f, "the hero should be bright blue");
             Assert.Less(color.r, 0.5f, "red or purple means danger, the hero must not look like that");
+
+            var stats = player.GetComponent<PlayerStats>();
+            Assert.IsNotNull(stats, "GameBootstrap's hero has no PlayerStats");
+            Assert.AreEqual(config.progressionSettings.MaxHpAt(1), stats.Health.Max, "the hero's HP doesn't come from config.progressionSettings");
 
             Assert.IsNotNull(player.GetComponent<FollowCamera>(), "GameBootstrap didn't attach a FollowCamera to the hero");
             yield return null;
@@ -258,9 +264,16 @@ namespace NightWorld.Tests
         private PlayerController Spawn(Transform marker, PlayerSettings settings)
         {
             Assert.IsNotNull(marker, "missing PlayerSpawn marker");
-            var player = PlayerSpawner.Spawn(marker, settings);
+            var player = PlayerSpawner.Spawn(marker, settings, MakeProgressionSettings());
             created.Add(player.gameObject);
             return player;
+        }
+
+        private ProgressionSettings MakeProgressionSettings()
+        {
+            var settings = ScriptableObject.CreateInstance<ProgressionSettings>();
+            created.Add(settings);
+            return settings;
         }
 
         private PlayerSettings MakeSettings()

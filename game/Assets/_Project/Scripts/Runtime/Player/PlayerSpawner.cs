@@ -1,5 +1,6 @@
 using System;
 using NightWorld.Data;
+using NightWorld.Progression;
 using NightWorld.World;
 using UnityEngine;
 
@@ -7,7 +8,7 @@ namespace NightWorld.Player
 {
     /// <summary>
     /// Creates the hero: a CharacterController with a bright blue capsule placeholder. Layout:
-    ///   Player   (CharacterController + PlayerController, pivot at the feet)
+    ///   Player   (CharacterController + PlayerController + Health + PlayerStats, pivot at the feet)
     ///    └── Body (capsule mesh, no collider)
     /// </summary>
     public static class PlayerSpawner
@@ -21,10 +22,11 @@ namespace NightWorld.Player
         /// <summary>Bright blue: it stands out on green grass, and red and purple mean danger.</summary>
         public static readonly Color BodyColor = new Color(0.15f, 0.5f, 1f, 1f);
 
-        public static PlayerController Spawn(Transform spawnMarker, PlayerSettings settings)
+        public static PlayerController Spawn(Transform spawnMarker, PlayerSettings settings, ProgressionSettings progressionSettings)
         {
             if (spawnMarker == null) throw new ArgumentNullException(nameof(spawnMarker));
             if (settings == null) throw new ArgumentNullException(nameof(settings));
+            if (progressionSettings == null) throw new ArgumentNullException(nameof(progressionSettings));
 
             var go = new GameObject("Player") { tag = "Player" };
             go.transform.position = spawnMarker.position + Vector3.up * SpawnLift;
@@ -46,6 +48,8 @@ namespace NightWorld.Player
             var player = go.AddComponent<PlayerController>();
             player.settings = settings;
             player.spawnPoint = spawnMarker;
+
+            go.AddComponent<PlayerStats>().Init(progressionSettings);
             return player;
         }
     }
