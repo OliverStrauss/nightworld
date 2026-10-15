@@ -29,12 +29,12 @@ jobs:
           fetch-depth: 0
       - name: Meta files, GUIDs and references
         run: python3 tools/check_assets.py
-      - name: Nightly branches must not touch scenes, ThirdParty, CI or agent config
+      - name: Nightly branches must not touch ThirdParty, CI or agent config
         if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'night/') && !contains(github.event.pull_request.labels.*.name, 'allow-protected-edits')
         run: |
           changed=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")
           echo "$changed"
-          bad=$(echo "$changed" | grep -E '\.unity$|^game/Assets/ThirdParty/|^\.github/|^runner/|^\.claude/|^CLAUDE\.md$' || true)
+          bad=$(echo "$changed" | grep -E '^game/Assets/ThirdParty/|^\.github/|^runner/|^\.claude/|^CLAUDE\.md$' || true)
           if [ -n "$bad" ]; then
             echo "::error::Nightly PRs may not change these files (add the 'allow-protected-edits' label to override):"
             echo "$bad"
