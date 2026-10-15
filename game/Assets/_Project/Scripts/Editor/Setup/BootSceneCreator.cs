@@ -1,5 +1,4 @@
 using System.Linq;
-using NightWorld.Data;
 using NightWorld.World;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -14,7 +13,6 @@ namespace NightWorld.EditorTools
     public static class BootSceneCreator
     {
         public const string BootScenePath = "Assets/_Project/Scenes/Boot.unity";
-        public const string StartZoneId = "harbor-town";
 
         [MenuItem("NightWorld/Setup/Create Boot Scene")]
         public static void CreateBootScene()
@@ -24,13 +22,10 @@ namespace NightWorld.EditorTools
             var scene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
 
             var bootstrap = new GameObject("Bootstrap").AddComponent<GameBootstrap>();
-            bootstrap.startZone = AssetDatabase.FindAssets("t:ZoneDefinition", new[] { ContentValidator.DataFolder })
-                .Select(guid => AssetDatabase.GUIDToAssetPath(guid))
-                .Select(path => AssetDatabase.LoadAssetAtPath<ZoneDefinition>(path))
-                .FirstOrDefault(z => z != null && z.id == StartZoneId);
+            bootstrap.config = ContentValidator.LoadAllGameConfigs().FirstOrDefault();
 
-            if (bootstrap.startZone == null)
-                Debug.LogWarning($"[BootSceneCreator] No zone with id '{StartZoneId}' found; assign startZone by hand.");
+            if (bootstrap.config == null)
+                Debug.LogWarning($"[BootSceneCreator] No GameConfig found under {ContentValidator.DataFolder}; assign config by hand.");
 
             EditorSceneManager.SaveScene(scene, BootScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(BootScenePath, true) };
