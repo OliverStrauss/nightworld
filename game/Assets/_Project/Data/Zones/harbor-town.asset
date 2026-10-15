@@ -104,25 +104,25 @@ MonoBehaviour:
     prefab: {fileID: 7197089695877111442, guid: eeb53a8b4ab4a4ce29f843a14fd7e779, type: 3}
     placeholder: 0
     placeholderColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-    position: {x: 0, y: 0.1, z: 7.5}
-    rotation: {x: 0, y: 0, z: 0}
-    scale: {x: 1.5, y: 0.3, z: 4.3333}
+    position: {x: 0, y: 0.119, z: 10.5}
+    rotation: {x: -0.87, y: 0, z: -1.03}
+    scale: {x: 1.5, y: 0.5, z: 5.667}
     snapToGround: 1
   - name: road-north-2
     prefab: {fileID: 7197089695877111442, guid: eeb53a8b4ab4a4ce29f843a14fd7e779, type: 3}
     placeholder: 0
     placeholderColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-    position: {x: 0, y: 0.1, z: 20.5}
-    rotation: {x: 0, y: 0, z: 0}
-    scale: {x: 1.5, y: 0.3, z: 4.3333}
+    position: {x: 0, y: 0.173, z: 24.5}
+    rotation: {x: -0.25, y: 0, z: 0}
+    scale: {x: 1.5, y: 0.5, z: 3.667}
     snapToGround: 1
   - name: road-north-3
     prefab: {fileID: 7197089695877111442, guid: eeb53a8b4ab4a4ce29f843a14fd7e779, type: 3}
     placeholder: 0
     placeholderColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-    position: {x: 0, y: 0.1, z: 33.5}
-    rotation: {x: 0, y: 0, z: 0}
-    scale: {x: 1.5, y: 0.3, z: 4.3333}
+    position: {x: 0, y: 0.1, z: 35}
+    rotation: {x: 0.11, y: 0, z: 0.61}
+    scale: {x: 1.5, y: 0.5, z: 3.333}
     snapToGround: 1
   enemySpawns: []
   shops:
@@ -146,3 +146,6 @@ MonoBehaviour:
   - name: north-seam
     position: {x: 6, y: 6, z: 22}
     lookAt: {x: 0, y: 0, z: 50}
+  - name: road
+    position: {x: 4, y: 3, z: 2}
+    lookAt: {x: 0, y: 0, z: 30}

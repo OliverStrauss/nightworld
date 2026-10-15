@@ -72,33 +72,33 @@ MonoBehaviour:
     prefab: {fileID: 7197089695877111442, guid: eeb53a8b4ab4a4ce29f843a14fd7e779, type: 3}
     placeholder: 0
     placeholderColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-    position: {x: 0, y: 0.1, z: -67}
-    rotation: {x: 0, y: 0, z: 0}
-    scale: {x: 1.5, y: 0.3, z: 2}
+    position: {x: 0, y: 0.132, z: -67}
+    rotation: {x: -2.01, y: 0, z: -0.73}
+    scale: {x: 1.5, y: 0.5, z: 2.001}
     snapToGround: 1
   - name: road-south-2
     prefab: {fileID: 7197089695877111442, guid: eeb53a8b4ab4a4ce29f843a14fd7e779, type: 3}
     placeholder: 0
     placeholderColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-    position: {x: 0, y: 0.1, z: -61}
-    rotation: {x: 0, y: 0, z: 0}
-    scale: {x: 1.5, y: 0.3, z: 2}
+    position: {x: 0, y: 0.098, z: -62}
+    rotation: {x: 2.25, y: 0, z: -1.72}
+    scale: {x: 1.5, y: 0.5, z: 1.334}
     snapToGround: 1
   - name: road-south-3
     prefab: {fileID: 7197089695877111442, guid: eeb53a8b4ab4a4ce29f843a14fd7e779, type: 3}
     placeholder: 0
     placeholderColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-    position: {x: 0, y: 0.1, z: -55}
-    rotation: {x: 0, y: 0, z: 0}
-    scale: {x: 1.5, y: 0.3, z: 2}
+    position: {x: 0, y: 0.144, z: -57}
+    rotation: {x: 6, y: 0, z: -1.26}
+    scale: {x: 1.5, y: 0.5, z: 2.011}
     snapToGround: 1
   - name: road-south-4
     prefab: {fileID: 7197089695877111442, guid: eeb53a8b4ab4a4ce29f843a14fd7e779, type: 3}
     placeholder: 0
     placeholderColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-    position: {x: 0, y: 0.1, z: -49}
-    rotation: {x: 0, y: 0, z: 0}
-    scale: {x: 1.5, y: 0.3, z: 2}
+    position: {x: 0, y: 0.149, z: -51.5}
+    rotation: {x: 3.02, y: 0, z: 0}
+    scale: {x: 1.5, y: 0.5, z: 1.669}
     snapToGround: 1
   - name: suspicious-stone-head
     prefab: {fileID: 2810185377565800770, guid: 241d40fe763b440eb914ac16c68857cb, type: 3}
@@ -128,3 +128,6 @@ MonoBehaviour:
   - name: stone-head
     position: {x: -25, y: 8, z: 23}
     lookAt: {x: -45, y: 6, z: 40}
+  - name: road
+    position: {x: 4, y: 3, z: -72}
+    lookAt: {x: 0, y: -0.4, z: -52}
