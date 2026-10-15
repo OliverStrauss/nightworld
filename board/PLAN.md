@@ -65,7 +65,7 @@ runner's config). No tokens or passwords in the repo, ever.
 
 Contract fields are in README.md. Tables:
 
-- `cards`: every field in README.md's Card, plus `effort` and `epicId`.
+- `cards`: every field in README.md's Card.
 - `card_deps`: (`cardId`, `dependsOn`).
 - `epics`: `id`, `slug`, `title`, `pitch`, `status` (`open | merged | dropped`), `branch`
   (`epic/<slug>`), `prUrl`, timestamps.
@@ -133,9 +133,9 @@ Goal: Oliver sees the whole world and taps a zone to see what it holds.
 
 These touch `runner/`, so each needs a card that explicitly says so (see CLAUDE.md rule 8).
 
-1. **Loop until the night budget is spent**: read `/api/settings/night`, keep taking
-   `next?points=<left>` cards until points, card cap or stop time runs out. Map `points` to
-   `--effort`, `--max-turns` and timeout.
+1. **Loop until the night budget is spent** (done, #14): read `/api/settings/night`, keep taking
+   `next?points=<left>` cards until points, card cap or stop time runs out. Still to do: map
+   `points` to `--effort`, `--max-turns` and timeout.
 2. **Epic branches**: build a card from its epic branch, open the PR against it, merge
    `main` into the epic branch first, and on PASS merge the card PR into the epic branch.
    Update `CLAUDE.md` and `runner/README.md`, which today say nothing merges automatically.

@@ -1,8 +1,9 @@
 # CLAUDE.md — rules for every agent working in this repo
 
-This repo is a 3D open-world RPG in Unity, built mostly by agents: one task card per night from
-the Pi, plus tasks Oliver hands you directly. A human (Oliver) reviews every PR. Your job is to
-leave him a small, correct, easy-to-review change — not a big impressive one.
+This repo is a 3D open-world RPG in Unity, built mostly by agents: task cards from the Pi every
+night (as many as the night's points allow), plus tasks Oliver hands you directly. A human
+(Oliver) reviews every PR. Your job is to leave him a small, correct, easy-to-review change —
+not a big impressive one.
 
 Read `docs/design.md`, `docs/world.md` and `docs/architecture.md` before your first change in a session,
 and `docs/content-yaml.md` before adding or editing any content asset.
@@ -18,7 +19,7 @@ and `docs/content-yaml.md` before adding or editing any content asset.
 | `docs/world.md` | The world's canon: map layout, danger tiers, what exists, naming. Oliver owns it |
 | `docs/architecture.md` | Code layout, assemblies, why zones are data |
 | `docs/content-yaml.md` | How to write `.asset` + `.meta` files by hand |
-| `docs/task-cards.md` | Card template and sizing (S or M only) |
+| `docs/task-cards.md` | Card template and sizing (points) |
 | `docs/verification.md` | The checks every PR goes through, cheapest first |
 | `docs/milestone-1.md` | Current goal: the core loop (walk out of town, fight, level up, buy gear) |
 | `tools/` | `check_assets.py` (metas, GUIDs, references), `new_guid.py` |

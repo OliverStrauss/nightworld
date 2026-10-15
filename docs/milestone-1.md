@@ -7,18 +7,18 @@ acceptance criteria using `docs/task-cards.md` before moving it to Ready.
 Already in the repo: data definitions, `ZoneBuilder`, enemy spawning, health, XP/gold rewards,
 the validator, the screenshotter, and the two starter zones.
 
-| # | Card | Type | Size |
+| # | Card | Type | Points |
 |---|---|---|---|
-| 1 | Player controller: capsule placeholder, WASD movement on terrain, spawns at `PlayerSpawn` | system | M |
-| 2 | Third-person follow camera with mouse orbit | system | S |
-| 3 | Melee attack: button press, short-range hitbox, cooldown, damages `Health` | system | M |
-| 4 | Enemy AI: idle wander inside spawn radius, chase and attack the player in range | system | M |
-| 5 | Player health + death: respawn at town, lose 10% gold | system | S |
-| 6 | HUD: HP bar, level, XP bar, gold | system | M |
-| 7 | Zone travel: portal props that load another zone by id | system | M |
-| 8 | Inventory: hold items, equip weapon/armor, stats from equipment | system | M |
-| 9 | Shop UI: buy/sell from `ShopDefinition` when inside `ShopTrigger` | system | M |
-| 10 | Loot drops: roll `lootTable` on enemy death, pick up by walking over | system | S |
-| 11 | PlayMode bot test: spawn player, walk to slimes, kill one, assert XP gained | system | M |
+| 1 | Player controller: capsule placeholder, WASD movement on terrain, spawns at `PlayerSpawn` | system | 2 |
+| 2 | Third-person follow camera with mouse orbit | system | 1 |
+| 3 | Melee attack: button press, short-range hitbox, cooldown, damages `Health` | system | 2 |
+| 4 | Enemy AI: idle wander inside spawn radius, chase and attack the player in range | system | 2 |
+| 5 | Player health + death: respawn at town, lose 10% gold | system | 1 |
+| 6 | HUD: HP bar, level, XP bar, gold | system | 2 |
+| 7 | Zone travel: portal props that load another zone by id | system | 2 |
+| 8 | Inventory: hold items, equip weapon/armor, stats from equipment | system | 2 |
+| 9 | Shop UI: buy/sell from `ShopDefinition` when inside `ShopTrigger` | system | 2 |
+| 10 | Loot drops: roll `lootTable` on enemy death, pick up by walking over | system | 1 |
+| 11 | PlayMode bot test: spawn player, walk to slimes, kill one, assert XP gained | system | 2 |
 
 After that, most cards can be content: new enemies, zones, items and shops.
