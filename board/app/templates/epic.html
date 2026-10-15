@@ -26,7 +26,7 @@
       {% if split and split.state == "failed" %}<p class="error">The groomer couldn't split it: {{ split.message }}</p>{% endif %}
       <form method="post" action="/epics/{{ epic.id }}/split">
         <button>🧹 Split into cards</button>
-        <small class="muted">The groomer reads the repo and drafts S/M cards into Backlog. Nothing gets built until you move them to Ready.</small>
+        <small class="muted">The groomer reads the repo and drafts cards into Backlog. Nothing gets built until you move them to Ready.</small>
       </form>
     {% endif %}
   </div>

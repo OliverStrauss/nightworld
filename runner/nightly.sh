@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 # NightWorld nightly runner. Runs on the Raspberry Pi from cron (see crontab.example).
 #
-#   1. take the top Ready card from the board
+# Reads tonight's budget from the board (points, max cards, stop time), then for each Ready card
+# that fits in the points left:
+#   1. take the card from the board
 #   2. builder agent implements it on night/card-<id> and opens a PR
 #   3. wait for GitHub Actions (asset checks, tests, screenshots)
 #   4. reviewer agent (fresh session) judges the PR against the card
 #   5. post the verdict to the PR and the board
+# until the points or the card cap run out, nothing in Ready fits, or the stop time has passed.
 #
 # Config lives OUTSIDE the repo, in ~/.config/nightworld/runner.env (copy runner/.env.example),
 # because the runner's clone is reset and cleaned every night.
@@ -33,9 +36,9 @@ BUILDER_TIMEOUT="${BUILDER_TIMEOUT:-3h}"
 CI_TIMEOUT="${CI_TIMEOUT:-90m}"
 
 STAMP="$(date +%F_%H%M)"
-WORK="$LOG_DIR/$STAMP"
-mkdir -p "$WORK"
-exec > >(tee -a "$WORK/run.log") 2>&1
+RUN="$LOG_DIR/$STAMP"   # one folder per night, with a card-<id> folder per card
+mkdir -p "$RUN"
+exec > >(tee -a "$RUN/run.log") 2>&1
 
 log() { echo "[$(date +%T)] $*"; }
 
@@ -73,25 +76,40 @@ event() { # event <card> <type> <message>
     -d "$(jq -n --arg t "$2" --arg m "$3" '{type: $t, message: $m}')" >/dev/null || true
 }
 
-# ---------------------------------------------------------------- 1. pick a card
-log "Asking the board for the next Ready card"
-status=$(curl -sS -o "$WORK/card.json" -w '%{http_code}' \
-  -H "Authorization: Bearer $BUILDER_TOKEN" "$BOARD_URL/api/cards/next")
-if [ "$status" = "204" ]; then
-  log "Nothing in Ready. Good night."
+# ---------------------------------------------------------------- tonight's budget
+board "$BUILDER_TOKEN" "$BOARD_URL/api/settings/night" > "$RUN/night.json"
+if [ "$(jq -r '.paused' "$RUN/night.json")" = true ]; then
+  log "The night shift is paused. Good night."
   exit 0
-elif [ "$status" != "200" ]; then
-  log "Board returned HTTP $status; giving up."
-  exit 1
 fi
+POINTS_LEFT=$(jq -r '.pointsPerNight' "$RUN/night.json")
+CARDS_LEFT=$(jq -r '.maxCards' "$RUN/night.json")
+STOP=$(jq -r '.stopTime' "$RUN/night.json")
+START=$(date +%H:%M)
+log "Tonight: $POINTS_LEFT points, up to $CARDS_LEFT cards, no new card after $STOP"
 
-CARD_ID=$(jq -r '.id' "$WORK/card.json")
-TITLE=$(jq -r '.title' "$WORK/card.json")
+# Still before the stop time? HH:MM strings sort in time order. A run that starts after the stop
+# time (say 22:00 with stop 06:00) stops tomorrow morning.
+before_stop() {
+  local now; now=$(date +%H:%M)
+  if [[ "$START" < "$STOP" ]]; then [[ "$now" < "$STOP" ]]
+  else [[ ! "$now" < "$START" || "$now" < "$STOP" ]]; fi
+}
+
+# Steps 1–5 for the card in $RUN/next.json, with its logs in $WORK. Sets CARD_POINTS.
+# Not indented, like main(): it's the old one-card script, now run once per card.
+build_card() {
+# ---------------------------------------------------------------- 1. take the card
+CARD_ID=$(jq -r '.id' "$RUN/next.json")
+TITLE=$(jq -r '.title' "$RUN/next.json")
 BRANCH="night/card-$CARD_ID"
+WORK="$RUN/card-$CARD_ID"
+mkdir -p "$WORK"
 log "Card $CARD_ID: $TITLE"
 
 board "$BUILDER_TOKEN" -X POST "$BOARD_URL/api/cards/$CARD_ID/claim" \
   -d "$(jq -n --arg b "$BRANCH" '{branch: $b}')" > "$WORK/card.json"
+CARD_POINTS=$(jq -r '.points' "$WORK/card.json")
 
 # ---------------------------------------------------------------- 2. build
 cd "$REPO_DIR"   # a clone used ONLY by this runner; local changes here get thrown away
@@ -107,7 +125,7 @@ else
 fi
 
 CARD_TEXT=$(jq -r '
-  "Card \(.id): \(.title)\nType: \(.type)   Size: \(.size)   Attempt: \(.attempts)\n\n" +
+  "Card \(.id): \(.title)\nType: \(.type)   Points: \(.points)   Attempt: \(.attempts)\n\n" +
   "Goal:\n\(.goal)\n\nAcceptance criteria:\n" +
   ([.criteria[] | "- [ ] " + .] | join("\n")) +
   "\n\nNotes:\n\(.notes // "none")" +
@@ -154,7 +172,7 @@ if [ -z "$PR" ]; then
   fi
   board "$REVIEWER_TOKEN" -X POST "$BOARD_URL/api/cards/$CARD_ID/review" \
     -d "$(jq -n --rawfile n "$WORK/builder.txt" '{verdict: "BLOCKED", notes: ("Builder did not open a PR.\n\n" + $n)}')" >/dev/null || true
-  exit 1
+  return 0   # the card is blocked; its points are still spent
 fi
 PR_URL=$(gh pr view "$PR" --json url -q .url)
 log "PR #$PR: $PR_URL"
@@ -215,7 +233,32 @@ gh pr comment "$PR" --body-file <(printf '## Reviewer agent: %s\n\n%s\n' "$VERDI
 board "$REVIEWER_TOKEN" -X POST "$BOARD_URL/api/cards/$CARD_ID/review" \
   -d "$(jq -n --arg v "$VERDICT" --rawfile n "$WORK/review.txt" --arg u "$PR_URL" '{verdict: $v, notes: $n, prUrl: $u}')" >/dev/null
 
-log "Done. Logs: $WORK"
+log "Card $CARD_ID finished. Logs: $WORK"
+}
+
+TRIED=" "
+while [ "$CARDS_LEFT" -gt 0 ] && [ "$POINTS_LEFT" -gt 0 ] && before_stop; do
+  log "Asking the board for the next Ready card that fits in $POINTS_LEFT points"
+  status=$(curl -sS -o "$RUN/next.json" -w '%{http_code}' \
+    -H "Authorization: Bearer $BUILDER_TOKEN" "$BOARD_URL/api/cards/next?points=$POINTS_LEFT")
+  if [ "$status" = "204" ]; then
+    log "Nothing in Ready fits in $POINTS_LEFT points."
+    break
+  elif [ "$status" != "200" ]; then
+    log "Board returned HTTP $status; giving up."
+    exit 1
+  fi
+  # A FAIL puts the card back on top of Ready; its retry is tomorrow's (board/README.md).
+  if [[ "$TRIED" == *" $(jq -r '.id' "$RUN/next.json") "* ]]; then
+    log "The next card already failed review tonight; it gets its retry tomorrow."
+    break
+  fi
+  build_card
+  TRIED="$TRIED$CARD_ID "
+  POINTS_LEFT=$((POINTS_LEFT - CARD_POINTS))
+  CARDS_LEFT=$((CARDS_LEFT - 1))
+done
+log "Good night. Logs: $RUN"
 }
 
 main "$@"

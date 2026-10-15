@@ -10,8 +10,8 @@ its criteria, it builds that phase on its own branch, and opens one PR.
 - **Same repo.** The app lives in `board/`, next to the game. It never touches `game/`.
 - **Game cards only.** The board holds NightWorld work, not personal todos, so the nightly
   builder can never pick up something that isn't a game task.
-- **Effort per card.** Each card has `effort: low | medium | high`; the runner maps it to
-  Claude Code `--effort`, max turns and a time limit.
+- **Points per card.** Each card has `points` (it replaced `size` and `effort` on 2026-10-14);
+  the runner maps it to Claude Code `--effort`, max turns and a time limit.
 - **Several cards per night.** A night budget (points, card cap, stop time) decides how many
   cards the runner builds, one after another.
 - **Epics.** A big feature is an epic with one branch `epic/<slug>` and a draft PR into `main`.
@@ -65,7 +65,7 @@ runner's config). No tokens or passwords in the repo, ever.
 
 Contract fields are in README.md. Tables:
 
-- `cards`: every field in README.md's Card, plus `effort` and `epicId`.
+- `cards`: every field in README.md's Card.
 - `card_deps`: (`cardId`, `dependsOn`).
 - `epics`: `id`, `slug`, `title`, `pitch`, `status` (`open | merged | dropped`), `branch`
   (`epic/<slug>`), `prUrl`, timestamps.
@@ -133,9 +133,9 @@ Goal: Oliver sees the whole world and taps a zone to see what it holds.
 
 These touch `runner/`, so each needs a card that explicitly says so (see CLAUDE.md rule 8).
 
-1. **Loop until the night budget is spent**: read `/api/settings/night`, keep taking `next`
-   cards until points, card cap or stop time runs out. Map `effort` to `--effort`,
-   `--max-turns` and timeout.
+1. **Loop until the night budget is spent** (done, #14): read `/api/settings/night`, keep taking
+   `next?points=<left>` cards until points, card cap or stop time runs out. Still to do: map
+   `points` to `--effort`, `--max-turns` and timeout.
 2. **Epic branches**: build a card from its epic branch, open the PR against it, merge
    `main` into the epic branch first, and on PASS merge the card PR into the epic branch.
    Update `CLAUDE.md` and `runner/README.md`, which today say nothing merges automatically.

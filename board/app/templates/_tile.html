@@ -4,7 +4,8 @@
   <span class="chips">
     <span class="chip">#{{ c.id }}</span>
     <span class="chip">{{ c.type }}</span>
-    <span class="chip effort-{{ c.effort }}">{{ c.size }} · {{ c.effort }}</span>
+    <span class="chip">{{ c.points }} pt{{ "s" if c.points != 1 }}</span>
+    {% if c.points > night.pointsPerNight and c.status in ("backlog", "ready") %}<span class="chip fail">bigger than a night</span>{% endif %}
     {% if c.epicId %}<span class="chip epic">⛵ {{ epic_slugs.get(c.epicId, c.epicId) }}</span>{% endif %}
     {% if c.dependsOn %}<span class="chip">needs {% for d in c.dependsOn %}#{{ d }}{% if not loop.last %}, {% endif %}{% endfor %}</span>{% endif %}
     {% if c.prUrl %}<span class="chip pr">PR</span>{% endif %}

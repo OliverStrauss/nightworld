@@ -12,7 +12,6 @@ from fastapi import HTTPException
 from .db import log_activity, now
 
 STATUSES = ("backlog", "ready", "building", "verifying", "review", "done", "blocked")
-EFFORT_FROM_SIZE = {"S": "low", "M": "medium"}
 
 # What the builder may change with PATCH (README.md: status → verifying, prUrl, mergedToEpic).
 BUILDER_FIELDS = {"status", "prUrl", "mergedToEpic"}
@@ -116,14 +115,13 @@ def create_card(conn: sqlite3.Connection, actor: str, fields: dict) -> dict:
 
     stamp = now()
     cur = conn.execute(
-        """INSERT INTO cards (title, type, size, effort, epicId, status, position, goal, criteria,
+        """INSERT INTO cards (title, type, points, epicId, status, position, goal, criteria,
                               notes, branch, prUrl, createdAt, updatedAt)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
             fields["title"],
             fields["type"],
-            fields["size"],
-            fields.get("effort") or EFFORT_FROM_SIZE[fields["size"]],
+            fields["points"],
             fields.get("epicId"),
             status,
             _column_size(conn, status) + 1,
@@ -191,22 +189,25 @@ def update_card(conn: sqlite3.Connection, actor: str, card_id: int, changes: dic
     return after
 
 
-def next_card(conn: sqlite3.Connection) -> dict | None:
-    """Top `ready` card whose dependencies are all met.
+def next_card(conn: sqlite3.Connection, points_left: int) -> dict | None:
+    """Top `ready` card whose dependencies are all met and whose points fit in `points_left`.
 
     A dependency is met when it's `done`, or when it's in the same epic and its PR has been
-    merged into the epic branch (`mergedToEpic`).
+    merged into the epic branch (`mergedToEpic`). A card that doesn't fit is skipped, like one
+    that's waiting on a dependency, so a smaller card further down can use up the night.
     """
     row = conn.execute(
         """SELECT * FROM cards c
            WHERE c.status = 'ready'
+             AND c.points <= ?
              AND NOT EXISTS (
                SELECT 1 FROM card_deps d JOIN cards dep ON dep.id = d.dependsOn
                WHERE d.cardId = c.id
                  AND dep.status != 'done'
                  AND NOT (dep.mergedToEpic = 1 AND dep.epicId IS NOT NULL AND dep.epicId IS c.epicId))
            ORDER BY c.position
-           LIMIT 1"""
+           LIMIT 1""",
+        (points_left,),
     ).fetchone()
     return to_json(conn, row) if row else None
 

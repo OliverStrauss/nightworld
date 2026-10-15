@@ -9,15 +9,7 @@
     <label>Type
       <select name="type">{% for t in ["content", "system", "fix", "chore"] %}<option {{ "selected" if form.type == t }}>{{ t }}</option>{% endfor %}</select>
     </label>
-    <label>Size
-      <select name="size">{% for s in ["S", "M"] %}<option {{ "selected" if form.size == s }}>{{ s }}</option>{% endfor %}</select>
-    </label>
-    <label>Effort
-      <select name="effort">
-        <option value="">from size</option>
-        {% for e in ["low", "medium", "high"] %}<option {{ "selected" if form.effort == e }}>{{ e }}</option>{% endfor %}
-      </select>
-    </label>
+    <label>Points <input type="number" name="points" min="1" inputmode="numeric" value="{{ form.points or 1 }}" required></label>
   </div>
   {% if not card %}
   <label>Stage

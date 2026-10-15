@@ -2,7 +2,7 @@
 # Times are in the Pi's local time zone. Check it with `timedatectl`; set it with
 #   sudo timedatectl set-timezone America/Chicago
 
-# Every night at 02:13, build the top Ready card.
+# Every night at 02:13, build Ready cards until the night's points, card cap or stop time run out.
 13 2 * * * /home/oliver/nightworld-runner/runner/nightly.sh >> /home/oliver/nightworld-logs/cron.log 2>&1
 
 # Optional: groom the backlog on Sunday afternoons (proposes splits as comments, never moves cards).

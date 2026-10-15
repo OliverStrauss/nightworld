@@ -7,7 +7,7 @@
   <p class="chips">
     <span class="chip">#{{ card.id }}</span>
     <span class="chip">{{ card.type }}</span>
-    <span class="chip effort-{{ card.effort }}">{{ card.size }} · {{ card.effort }} ({{ POINTS[card.effort] }} pt{{ "s" if POINTS[card.effort] != 1 }})</span>
+    <span class="chip">{{ card.points }} pt{{ "s" if card.points != 1 }}</span>
     {% if card.attempts %}<span class="chip">attempt {{ card.attempts }}</span>{% endif %}
     {% if card.consecutiveFails %}<span class="chip fail">✗{{ card.consecutiveFails }} in a row</span>{% endif %}
     {% if card.mergedToEpic %}<span class="chip epic">merged into epic</span>{% endif %}

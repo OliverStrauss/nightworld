@@ -69,7 +69,7 @@ def test_epic_lists_its_cards_dependencies_first(client, make_card, make_epic):
 
 
 def test_card_epic_must_exist(client, make_card):
-    r = client.post("/api/cards", json={"title": "t", "type": "fix", "size": "S", "epicId": 5}, headers=auth("oliver"))
+    r = client.post("/api/cards", json={"title": "t", "type": "fix", "epicId": 5}, headers=auth("oliver"))
     assert r.status_code == 422
     card = make_card()
     assert client.patch(f"/api/cards/{card['id']}", json={"epicId": 5}, headers=auth("oliver")).status_code == 422

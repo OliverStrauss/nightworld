@@ -3,7 +3,7 @@
 {% block main %}
 <form class="panel" method="post" action="/settings">
   <h1>Night shift</h1>
-  <p class="muted">How much the builder takes on each night. Effort points: low 1, medium 2, high 4.</p>
+  <p class="muted">How much the builder takes on each night. A card is only started if its points fit in what's left: with 5 points, a 2 and a 3 fit, a 3 and a 6 don't.</p>
   {% if error %}<p class="error">{{ error }}</p>{% endif %}
   {% if saved %}<p class="ok">Saved. The goblins have been informed.</p>{% endif %}
   <div class="row">

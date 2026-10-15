@@ -3,6 +3,7 @@ import sqlite3
 
 import pytest
 
+from app.db import SCHEMA, connect, init_db
 from conftest import auth
 
 ALL_TABLES = {"schema_version", "epics", "cards", "card_deps", "comments", "activity", "settings"}
@@ -23,7 +24,32 @@ def test_start_creates_all_tables(client, db_path):
     conn = sqlite3.connect(db_path)
     tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
     assert ALL_TABLES <= tables
-    assert conn.execute("SELECT version FROM schema_version").fetchall() == [(1,)]
+    assert conn.execute("SELECT version FROM schema_version").fetchall() == [(2,)]
+
+
+def test_start_turns_old_size_and_effort_into_points(tmp_path):
+    path = str(tmp_path / "old.db")
+    old = sqlite3.connect(path)
+    # A version-1 board: the same schema, but cards had size and effort instead of points.
+    old.executescript(SCHEMA.replace("points           INTEGER NOT NULL DEFAULT 1,", "size TEXT NOT NULL, effort TEXT NOT NULL,"))
+    old.executescript("""
+        INSERT INTO schema_version VALUES (1);
+        INSERT INTO cards (title, type, size, effort, status, position, createdAt, updatedAt) VALUES
+            ('low', 'fix', 'S', 'low', 'ready', 1, 'x', 'x'),
+            ('medium', 'fix', 'M', 'medium', 'ready', 2, 'x', 'x'),
+            ('high', 'fix', 'M', 'high', 'ready', 3, 'x', 'x');
+    """)
+    old.close()
+
+    conn = connect(path)
+    init_db(conn)
+    init_db(conn)  # the next start leaves it alone
+    assert [tuple(r) for r in conn.execute("SELECT title, points FROM cards ORDER BY id")] == [
+        ("low", 1), ("medium", 2), ("high", 4)
+    ]
+    columns = {r["name"] for r in conn.execute("PRAGMA table_info(cards)")}
+    assert "points" in columns and not columns & {"size", "effort"}
+    assert conn.execute("SELECT version FROM schema_version").fetchone()[0] == 2
 
 
 @pytest.mark.parametrize(
@@ -51,14 +77,14 @@ def test_everyone_can_read(client, make_card, actor):
 
 
 def test_card_has_every_contract_field(make_card):
-    card = make_card(size="M", goal="Slimes!", criteria=["a", "b"], notes="n")
+    card = make_card(points=2, goal="Slimes!", criteria=["a", "b"], notes="n")
     assert set(card) == {
-        "id", "title", "type", "size", "effort", "epicId", "mergedToEpic", "status", "position",
+        "id", "title", "type", "points", "epicId", "mergedToEpic", "status", "position",
         "goal", "criteria", "notes", "dependsOn", "branch", "prUrl", "attempts",
         "consecutiveFails", "lastReview", "createdAt", "updatedAt",
     }
     assert card["status"] == "backlog"
-    assert card["effort"] == "medium"  # from size M
+    assert card["points"] == 2
     assert card["criteria"] == ["a", "b"]
     assert card["mergedToEpic"] is False
     assert card["attempts"] == 0
@@ -92,15 +118,15 @@ def test_get_missing_card_is_404(client):
 def test_oliver_can_create_in_any_status(client):
     r = client.post(
         "/api/cards",
-        json={"title": "t", "type": "fix", "size": "S", "status": "ready", "effort": "high"},
+        json={"title": "t", "type": "fix", "status": "ready", "points": 4},
         headers=auth("oliver"),
     )
     assert r.status_code == 201
-    assert r.json()["status"] == "ready" and r.json()["effort"] == "high"
+    assert r.json()["status"] == "ready" and r.json()["points"] == 4
 
 
 def test_groomer_can_create_in_backlog_only(client):
-    body = {"title": "t", "type": "chore", "size": "S"}
+    body = {"title": "t", "type": "chore"}
     assert client.post("/api/cards", json=body, headers=auth("groomer")).status_code == 201
     r = client.post("/api/cards", json={**body, "status": "backlog"}, headers=auth("groomer"))
     assert r.status_code == 201
@@ -110,20 +136,22 @@ def test_groomer_can_create_in_backlog_only(client):
 
 @pytest.mark.parametrize("actor", ["builder", "reviewer"])
 def test_builder_and_reviewer_cannot_create(client, actor):
-    r = client.post("/api/cards", json={"title": "t", "type": "fix", "size": "S"}, headers=auth(actor))
+    r = client.post("/api/cards", json={"title": "t", "type": "fix"}, headers=auth(actor))
     assert r.status_code == 403
 
 
 @pytest.mark.parametrize(
     "body",
     [
-        {"type": "fix", "size": "S"},
-        {"title": "", "type": "fix", "size": "S"},
-        {"title": "t", "type": "feature", "size": "S"},
-        {"title": "t", "type": "fix", "size": "L"},
-        {"title": "t", "type": "fix", "size": "S", "effort": "max"},
-        {"title": "t", "type": "fix", "size": "S", "attempts": 3},
-        {"title": "t", "type": "fix", "size": "S", "dependsOn": [999]},
+        {"type": "fix"},
+        {"title": "", "type": "fix"},
+        {"title": "t", "type": "feature"},
+        {"title": "t", "type": "fix", "size": "S"},
+        {"title": "t", "type": "fix", "effort": "low"},
+        {"title": "t", "type": "fix", "points": 0},
+        {"title": "t", "type": "fix", "points": "lots"},
+        {"title": "t", "type": "fix", "attempts": 3},
+        {"title": "t", "type": "fix", "dependsOn": [999]},
     ],
 )
 def test_invalid_create_is_422(client, body):
@@ -270,11 +298,35 @@ def test_next_picks_card_once_dependencies_are_done(client, make_card):
     assert client.get("/api/cards/next", headers=auth("builder")).json()["title"] == "waits"
 
 
+def test_next_only_returns_cards_that_fit_the_points_left(client, make_card):
+    make_card(title="three", status="ready", points=3)
+    make_card(title="six", status="ready", points=6)
+    make_card(title="two", status="ready", points=2)
+
+    def next_title(points):
+        r = client.get(f"/api/cards/next?points={points}", headers=auth("builder"))
+        return r.json()["title"] if r.status_code == 200 else r.status_code
+
+    # A 5-point night: the three, then the two fits in what's left; the six never does.
+    assert next_title(5) == "three"
+    assert next_title(2) == "two"
+    assert next_title(1) == 204
+    assert next_title(-1) == 422
+
+
+def test_next_uses_the_whole_night_by_default(client, make_card):
+    make_card(title="big", status="ready", points=5)
+    assert client.get("/api/cards/next", headers=auth("builder")).status_code == 204  # default night: 4 points
+    night = {"pointsPerNight": 5, "maxCards": 3, "stopTime": "06:00", "paused": False}
+    client.put("/api/settings/night", json=night, headers=auth("oliver"))
+    assert client.get("/api/cards/next", headers=auth("builder")).json()["title"] == "big"
+
+
 # ---- activity log
 
 
 def test_every_write_is_logged_with_its_actor(client, make_card, db_path):
-    client.post("/api/cards", json={"title": "g", "type": "chore", "size": "S"}, headers=auth("groomer"))
+    client.post("/api/cards", json={"title": "g", "type": "chore"}, headers=auth("groomer"))
     card = make_card(status="building")
     client.patch(f"/api/cards/{card['id']}", json={"status": "verifying"}, headers=auth("builder"))
     client.patch(f"/api/cards/{card['id']}", json={"notes": "nice"}, headers=auth("oliver"))
@@ -296,7 +348,7 @@ def test_reads_and_rejected_writes_are_not_logged(client, make_card, db_path):
     client.get("/api/cards", headers=auth("oliver"))
     client.get(f"/api/cards/{card['id']}", headers=auth("builder"))
     client.patch(f"/api/cards/{card['id']}", json={"title": "x"}, headers=auth("builder"))
-    client.post("/api/cards", json={"title": "t", "type": "fix", "size": "S"}, headers=auth("reviewer"))
+    client.post("/api/cards", json={"title": "t", "type": "fix"}, headers=auth("reviewer"))
     assert len(activity(db_path)) == 1
 
 

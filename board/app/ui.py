@@ -33,7 +33,7 @@ STAGES = [("backlog", "Backlog"), ("ready", "Ready"), ("done", "Done")]
 STAGE_OF = {"backlog": "backlog", "ready": "ready", "building": "ready", "verifying": "ready",
             "blocked": "ready", "review": "done", "done": "done"}
 DONE_SHOWN = 20
-templates.env.globals.update(STAGES=STAGES, STAGE_OF=STAGE_OF, STATUS_NAMES=STATUS_NAMES, POINTS=night.POINTS)
+templates.env.globals.update(STAGES=STAGES, STAGE_OF=STAGE_OF, STATUS_NAMES=STATUS_NAMES)
 # "2026-10-14T18:45:20Z" → "Oct 14 18:45" (UTC, like the stored timestamps)
 templates.env.filters["when"] = lambda iso: datetime.fromisoformat(iso.replace("Z", "+00:00")).strftime("%b %d %H:%M")
 
@@ -94,6 +94,7 @@ def logout():
 @router.get("/")
 def board(request: Request, actor: str = Depends(login_required), conn: sqlite3.Connection = Depends(get_conn)):
     all_cards = cards.list_cards(conn)
+    settings = night.get(conn)
 
     def having(*statuses):
         return [c for c in all_cards if c["status"] in statuses]
@@ -119,8 +120,8 @@ def board(request: Request, actor: str = Depends(login_required), conn: sqlite3.
         done=finished[:DONE_SHOWN],
         done_total=len(finished),
         epic_slugs={e["id"]: e["slug"] for e in all_epics},
-        night=night.get(conn),
-        next_card=cards.next_card(conn),
+        night=settings,
+        next_card=cards.next_card(conn, settings["pointsPerNight"]),
     )
 
 
@@ -161,8 +162,7 @@ def parse_card_form(form) -> dict:
     fields = {
         "title": (form.get("title") or "").strip(),
         "type": form.get("type"),
-        "size": form.get("size"),
-        "effort": form.get("effort") or None,
+        "points": form.get("points"),
         "goal": (form.get("goal") or "").strip(),
         "criteria": [c for c in criteria if c],
         "notes": (form.get("notes") or "").strip(),
@@ -188,7 +188,7 @@ def new_card(
     request: Request, epic: int | None = None, actor: str = Depends(login_required),
     conn: sqlite3.Connection = Depends(get_conn),
 ):
-    return card_form(request, conn, None, {"status": "backlog", "epicId": epic, "size": "S", "type": "content"})
+    return card_form(request, conn, None, {"status": "backlog", "epicId": epic, "points": 1, "type": "content"})
 
 
 @router.post("/cards/new")
@@ -232,8 +232,6 @@ async def save_card(
     form = await request.form()
     fields = parse_card_form(form)
     fields.pop("status", None)  # moving has its own control
-    if fields["effort"] is None:
-        fields["effort"] = cards.EFFORT_FROM_SIZE.get(fields["size"], card["effort"])
     try:
         cards.update_card(conn, actor, card_id, CardPatch(**fields).model_dump(exclude_unset=True))
     except (ValidationError, HTTPException) as exc:

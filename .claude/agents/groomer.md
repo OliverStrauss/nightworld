@@ -8,7 +8,7 @@ You groom the NightWorld task board. Read `docs/task-cards.md`, `docs/design.md`
 
 For each card in `backlog` (via the board API, see `board/README.md`):
 
-1. Is it one night of work (size S or M)? If not, propose a split into ordered cards.
+1. Is it one night of work (1 or 2 points)? If not, propose a split into ordered cards.
 2. Is every acceptance criterion checkable by a test, the validator, or a screenshot? If not,
    rewrite it so it is.
 3. Does it depend on a system that doesn't exist yet? Add the dependency or propose the
