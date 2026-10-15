@@ -65,6 +65,9 @@ MonoBehaviour:
     position: {x: 8, y: 0, z: -2}
     rotationY: -90
     prefab: {fileID: 0}
+  neighbours:
+  - zone: {fileID: 11400000, guid: b5a8893ee4e02241637f3c4d2099aa1e, type: 2}
+    offset: {x: 0, y: 0, z: 110}
   screenshotPoints:
   - name: overview
     position: {x: 0, y: 35, z: -45}
@@ -72,3 +75,6 @@ MonoBehaviour:
   - name: shop
     position: {x: 14, y: 6, z: -10}
     lookAt: {x: 8, y: 1, z: -2}
+  - name: world-overview
+    position: {x: 0, y: 140, z: -110}
+    lookAt: {x: 0, y: 0, z: 60}

@@ -78,6 +78,14 @@ namespace NightWorld.Data
         public Vector3 lookAt = Vector3.zero;
     }
 
+    [System.Serializable]
+    public class ZoneLink
+    {
+        public ZoneDefinition zone;
+        [Tooltip("The neighbour's origin relative to this zone's origin, in metres. y must be 0. The two grounds must touch edge to edge.")]
+        public Vector3 offset;
+    }
+
     [CreateAssetMenu(menuName = "NightWorld/Zone", fileName = "new-zone")]
     public class ZoneDefinition : Definition
     {
@@ -92,6 +100,9 @@ namespace NightWorld.Data
         public List<PropPlacement> props = new List<PropPlacement>();
         public List<EnemySpawn> enemySpawns = new List<EnemySpawn>();
         public List<ShopPlacement> shops = new List<ShopPlacement>();
+
+        [Tooltip("Zones built next to this one. Links are one-way and WorldBuilder walks them from the start zone, so declare each link once, on the zone nearer the start.")]
+        public List<ZoneLink> neighbours = new List<ZoneLink>();
 
         [Tooltip("Camera poses CI uses to photograph this zone for the reviewer agent. At least one required.")]
         public List<ScreenshotPoint> screenshotPoints = new List<ScreenshotPoint>();

@@ -22,6 +22,9 @@ namespace NightWorld.EditorTools
     {
         public const string DataFolder = "Assets/_Project/Data";
 
+        /// <summary>How far apart (or into each other) two linked grounds may be and still count as touching, in metres.</summary>
+        private const float LinkTolerance = 0.01f;
+
         private static readonly Regex IdPattern = new Regex("^[a-z0-9]+(-[a-z0-9]+)*$");
 
         public enum Severity
@@ -236,6 +239,26 @@ namespace NightWorld.EditorTools
                 var s = zone.shops[i];
                 if (s == null || s.shop == null) { issues.Add(Error(label, $"shops[{i}] has no shop (missing reference?).")); continue; }
                 if (!ZoneBuilder.IsInsideGround(g, s.position)) issues.Add(Error(label, $"shops[{i}] ({s.shop.id}) is outside the ground."));
+            }
+
+            for (int i = 0; i < zone.neighbours.Count; i++)
+            {
+                var link = zone.neighbours[i];
+                if (link == null || link.zone == null) { issues.Add(Error(label, $"neighbours[{i}] has no zone (missing reference?).")); continue; }
+                if (link.zone == zone) { issues.Add(Error(label, $"neighbours[{i}] links the zone to itself.")); continue; }
+                if (link.offset.y != 0f) issues.Add(Error(label, $"neighbours[{i}] ({link.zone.id}) offset.y is {link.offset.y}; it must be 0."));
+
+                var n = link.zone.ground;
+                if (n == null || n.size.x <= 0f || n.size.y <= 0f) continue; // reported on the neighbour itself
+
+                // Distance between the two ground rectangles: < 0 overlaps, 0 touches, > 0 leaves a gap.
+                float gapX = Mathf.Abs(link.offset.x) - (g.size.x + n.size.x) * 0.5f;
+                float gapZ = Mathf.Abs(link.offset.z) - (g.size.y + n.size.y) * 0.5f;
+                float gap = Mathf.Max(gapX, gapZ);
+                if (gap < -LinkTolerance)
+                    issues.Add(Error(label, $"neighbours[{i}] ({link.zone.id}) ground overlaps this zone's ground by {-gap} m; the edges must touch."));
+                else if (gap > LinkTolerance)
+                    issues.Add(Error(label, $"neighbours[{i}] ({link.zone.id}) ground doesn't touch this zone's ground (gap {gap} m)."));
             }
         }
 

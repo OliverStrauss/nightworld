@@ -96,6 +96,56 @@ namespace NightWorld.Tests
         }
 
         [Test]
+        public void TouchingLinkedZones_HaveNoErrors()
+        {
+            var town = LinkedPair(new Vector3(0f, 0f, 110f), out var fields);
+
+            Assert.IsEmpty(Errors(new Definition[] { town, fields }));
+        }
+
+        [Test]
+        public void LinkWithoutZone_IsError()
+        {
+            var town = Zone("test-town");
+            town.neighbours.Add(new ZoneLink { zone = null, offset = new Vector3(0f, 0f, 100f) });
+
+            AssertHasError(new Definition[] { town }, "has no zone");
+        }
+
+        [Test]
+        public void LinkToItself_IsError()
+        {
+            var town = Zone("test-town");
+            town.neighbours.Add(new ZoneLink { zone = town, offset = new Vector3(0f, 0f, 100f) });
+
+            AssertHasError(new Definition[] { town }, "links the zone to itself");
+        }
+
+        [Test]
+        public void LinkWithVerticalOffset_IsError()
+        {
+            var town = LinkedPair(new Vector3(0f, 5f, 110f), out var fields);
+
+            AssertHasError(new Definition[] { town, fields }, "offset.y");
+        }
+
+        [Test]
+        public void LinkedGroundsOverlapping_IsError()
+        {
+            var town = LinkedPair(new Vector3(0f, 0f, 100f), out var fields);
+
+            AssertHasError(new Definition[] { town, fields }, "overlaps");
+        }
+
+        [Test]
+        public void LinkedGroundsWithAGap_IsError()
+        {
+            var town = LinkedPair(new Vector3(0f, 0f, 111f), out var fields);
+
+            AssertHasError(new Definition[] { town, fields }, "doesn't touch");
+        }
+
+        [Test]
         public void ValidGameConfig_HasNoErrors()
         {
             Assert.IsEmpty(ConfigErrors(Config()));
@@ -188,6 +238,17 @@ namespace NightWorld.Tests
             var enemy = Make<EnemyDefinition>(id);
             if (loot != null) enemy.lootTable.Add(new LootEntry { item = loot, chance = 0.5f });
             return enemy;
+        }
+
+        /// <summary>An 80 m town linking a 140 m field at offset; (0, 0, 110) makes the grounds touch at z = 40.</summary>
+        private ZoneDefinition LinkedPair(Vector3 offset, out ZoneDefinition fields)
+        {
+            var town = Zone("test-town");
+            town.ground.size = new Vector2(80f, 80f);
+            fields = Zone("test-fields");
+            fields.ground.size = new Vector2(140f, 140f);
+            town.neighbours.Add(new ZoneLink { zone = fields, offset = offset });
+            return town;
         }
 
         private ZoneDefinition Zone(string id)
