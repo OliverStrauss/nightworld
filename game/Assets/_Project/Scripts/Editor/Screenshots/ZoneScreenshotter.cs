@@ -12,7 +12,7 @@ using UnityEngine.Rendering;
 namespace NightWorld.EditorTools
 {
     /// <summary>
-    /// Builds each zone in an empty scene and renders PNGs from its screenshot points into
+    /// Builds each zone (with its linked neighbours) in an empty scene and renders PNGs from its screenshot points into
     /// &lt;project&gt;/Screenshots/&lt;zone-id&gt;/&lt;point&gt;.png. The reviewer agent looks at these.
     ///
     ///  - Menu: NightWorld → Capture Zone Screenshots
@@ -90,7 +90,8 @@ namespace NightWorld.EditorTools
             RenderSettings.ambientMode = AmbientMode.Flat;
             RenderSettings.ambientLight = new Color(0.55f, 0.6f, 0.65f);
 
-            var root = ZoneBuilder.Build(zone);
+            // The zone plus its linked neighbours; a zone without links builds exactly as before.
+            var root = WorldBuilder.Build(zone);
             foreach (var spawner in root.GetComponentsInChildren<EnemySpawner>()) spawner.SpawnAll();
 
             var cam = new GameObject("ScreenshotCamera").AddComponent<Camera>();
