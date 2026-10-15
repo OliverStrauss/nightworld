@@ -92,6 +92,7 @@ namespace NightWorld.EditorTools
                 string label = string.IsNullOrEmpty(path) ? $"GameConfig '{config.name}'" : path;
                 if (config.startZone == null) issues.Add(Error(label, "startZone is missing."));
                 if (config.progressionSettings == null) issues.Add(Error(label, "progressionSettings is missing."));
+                if (config.playerSettings == null) issues.Add(Error(label, "playerSettings is missing."));
             }
 
             return issues;

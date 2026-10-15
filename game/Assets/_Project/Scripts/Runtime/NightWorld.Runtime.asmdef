@@ -1,7 +1,9 @@
 {
     "name": "NightWorld.Runtime",
     "rootNamespace": "NightWorld",
-    "references": [],
+    "references": [
+        "Unity.InputSystem"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
