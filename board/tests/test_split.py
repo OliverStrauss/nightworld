@@ -8,11 +8,11 @@ from conftest import auth
 GOOD = """Here you go:
 ```json
 {"cards": [
-  {"title": "Fishing rod item", "type": "content", "size": "S", "goal": "A rod to fish with.",
+  {"title": "Fishing rod item", "type": "content", "goal": "A rod to fish with.",
    "criteria": ["ItemDefinition `fishing-rod` exists"], "dependsOn": []},
-  {"title": "Cast and reel", "type": "system", "size": "M", "effort": "high",
+  {"title": "Cast and reel", "type": "system", "points": 4,
    "criteria": ["PlayMode test catches a boot"], "dependsOn": [1]},
-  {"title": "Suspiciously Damp Boots", "type": "content", "size": "S", "dependsOn": [1, 2, 7]}
+  {"title": "Suspiciously Damp Boots", "type": "content", "dependsOn": [1, 2, 7]}
 ]}
 ```"""
 
@@ -56,7 +56,7 @@ def test_split_adds_draft_cards_to_backlog(client, epic, fake_claude):
     assert titles == ["Fishing rod item", "Cast and reel", "Suspiciously Damp Boots"]
     rod, reel, boots = full["cards"]
     assert all(c["status"] == "backlog" and c["epicId"] == epic["id"] for c in full["cards"])
-    assert reel["dependsOn"] == [rod["id"]] and reel["effort"] == "high"
+    assert reel["dependsOn"] == [rod["id"]] and reel["points"] == 4
     assert boots["dependsOn"] == [rod["id"], reel["id"]]  # 7 doesn't exist: dropped
     log = client.get("/api/activity", headers=auth("oliver")).json()
     assert {(e["actor"], e["type"]) for e in log} >= {("groomer", "card.created"), ("groomer", "epic.split")}
@@ -81,7 +81,7 @@ def test_failures_are_shown_and_add_nothing(client, epic, fake_claude, reply):
 
 
 def test_one_bad_draft_adds_none_of_them(client, epic, fake_claude):
-    bad = json.dumps({"cards": [{"title": "ok", "type": "fix", "size": "S"}, {"title": "huge", "type": "fix", "size": "L"}]})
+    bad = json.dumps({"cards": [{"title": "ok", "type": "fix", "points": 1}, {"title": "nothing", "type": "fix", "points": 0}]})
     fake_claude(bad)
     client.post(f"/api/epics/{epic['id']}/split", headers=auth("oliver"))
     finish(epic["id"])

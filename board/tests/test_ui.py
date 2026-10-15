@@ -117,7 +117,7 @@ def test_create_card_from_the_form(browser, client):
     r = browser.post(
         "/cards/new",
         data={
-            "title": "Add a dock", "type": "content", "size": "M", "effort": "", "status": "ready",
+            "title": "Add a dock", "type": "content", "points": "3", "status": "ready",
             "goal": "Somewhere to fish.", "criteria": "- [ ] three crates\n\n* a rope\n", "notes": "", "dependsOn": "",
             "epicId": "",
         },
@@ -125,14 +125,27 @@ def test_create_card_from_the_form(browser, client):
     )
     assert r.status_code == 303 and r.headers["location"] == "/cards/1"
     c = card(client, 1)
-    assert c["title"] == "Add a dock" and c["status"] == "ready" and c["effort"] == "medium"
+    assert c["title"] == "Add a dock" and c["status"] == "ready" and c["points"] == 3
     assert c["criteria"] == ["three crates", "a rope"]
     log = client.get("/api/activity", headers=auth("oliver")).json()
     assert log[-1]["actor"] == "oliver" and log[-1]["type"] == "card.created"
 
 
+def test_card_form_asks_for_points_not_size_or_effort(browser):
+    html = browser.get("/cards/new").text
+    assert 'name="points"' in html
+    assert 'name="size"' not in html and 'name="effort"' not in html
+
+
+def test_board_flags_a_card_bigger_than_a_whole_night(browser, make_card):
+    make_card(title="fits", status="ready", points=4)  # default night: 4 points
+    assert "bigger than a night" not in browser.get("/").text
+    make_card(title="huge", status="ready", points=5)
+    assert browser.get("/").text.count("bigger than a night") == 1
+
+
 def test_create_form_shows_errors(browser):
-    r = browser.post("/cards/new", data={"title": "", "type": "content", "size": "S", "dependsOn": "99"})
+    r = browser.post("/cards/new", data={"title": "", "type": "content", "points": "1", "dependsOn": "99"})
     assert r.status_code == 422 and 'class="error"' in r.text
 
 
@@ -142,22 +155,22 @@ def test_edit_card_from_the_form(browser, client, make_card):
     r = browser.post(
         "/cards/1/edit",
         data={
-            "title": "Renamed", "type": "fix", "size": "S", "effort": "high", "goal": "g", "criteria": "a\nb",
+            "title": "Renamed", "type": "fix", "points": "2", "goal": "g", "criteria": "a\nb",
             "notes": "n", "dependsOn": f"#{dep['id']}", "epicId": "", "branch": "night/card-1", "prUrl": "",
         },
         follow_redirects=False,
     )
     assert r.status_code == 303
     c = card(client, 1)
-    assert (c["title"], c["type"], c["effort"], c["criteria"], c["dependsOn"], c["branch"]) == (
-        "Renamed", "fix", "high", ["a", "b"], [dep["id"]], "night/card-1"
+    assert (c["title"], c["type"], c["points"], c["criteria"], c["dependsOn"], c["branch"]) == (
+        "Renamed", "fix", 2, ["a", "b"], [dep["id"]], "night/card-1"
     )
 
 
 def test_edit_form_rejects_a_dependency_cycle(browser, make_card):
     make_card()
     make_card(dependsOn=[1])
-    r = browser.post("/cards/1/edit", data={"title": "x", "type": "fix", "size": "S", "dependsOn": "2"})
+    r = browser.post("/cards/1/edit", data={"title": "x", "type": "fix", "points": "1", "dependsOn": "2"})
     assert r.status_code == 422 and "cycle" in r.text
 
 

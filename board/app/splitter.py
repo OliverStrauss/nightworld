@@ -1,7 +1,7 @@
 """Split an epic into draft cards with the groomer agent.
 
 Oliver writes the epic's title and pitch; the groomer (Claude Code, `--agent groomer`) reads the
-repo and proposes ordered S/M cards. They land in `backlog` as the `groomer` actor, so nothing is
+repo and proposes ordered cards. They land in `backlog` as the `groomer` actor, so nothing is
 built until Oliver drags them into Ready. It takes a few minutes, so it runs on a thread and the
 epic page shows its progress.
 
@@ -35,7 +35,8 @@ Read CLAUDE.md, docs/design.md, docs/world.md, docs/architecture.md and docs/tas
 what already exists in game/Assets/_Project so the cards build on real systems.
 
 Rules:
-- At most {max_cards} cards, in build order. Each is one night of work: size S or M, never L.
+- At most {max_cards} cards, in build order. Each is one night of work. Give each `points`:
+  1 for one definition or a small fix, 2 for one new system or a zone with a few parts.
 - Systems before content. Every acceptance criterion is checkable by a test, the validator or a
   screenshot. Name the IDs (kebab-case) you want created.
 - Keep the game's vibe: fun beats realistic, light and a bit silly.
@@ -46,9 +47,8 @@ Rules:
 - `dependsOn` lists the 1-based numbers of earlier cards in YOUR list that must be built first.
 
 Do not change any files and do not call the board API. Reply with only a JSON object, no prose:
-{{"cards": [{{"title": "...", "type": "content|system|fix|chore", "size": "S|M",
-  "effort": "low|medium|high", "goal": "...", "criteria": ["...", "..."], "notes": "...",
-  "dependsOn": [1]}}]}}
+{{"cards": [{{"title": "...", "type": "content|system|fix|chore", "points": 1,
+  "goal": "...", "criteria": ["...", "..."], "notes": "...", "dependsOn": [1]}}]}}
 """
 
 
@@ -122,7 +122,7 @@ def create_drafts(conn, epic_id: int, drafts: list[dict]) -> list[int]:
     checked = []
     for n, draft in enumerate(drafts, start=1):  # check them all before adding any
         deps = [d for d in draft.get("dependsOn") or [] if isinstance(d, int) and 0 < d < n]
-        fields = {k: draft.get(k) for k in ("title", "type", "size", "effort", "goal", "notes")}
+        fields = {k: draft.get(k) for k in ("title", "type", "points", "goal", "notes")}
         fields = {k: v for k, v in fields.items() if v not in (None, "")}
         fields.update(criteria=[str(c) for c in draft.get("criteria") or []], epicId=epic_id)
         try:

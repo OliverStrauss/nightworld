@@ -9,7 +9,6 @@ from fastapi import HTTPException
 from .db import log_activity
 
 DEFAULTS = {"pointsPerNight": 4, "maxCards": 3, "stopTime": "06:00", "paused": False}
-POINTS = {"low": 1, "medium": 2, "high": 4}  # README.md: effort → points
 
 
 def get(conn: sqlite3.Connection) -> dict:

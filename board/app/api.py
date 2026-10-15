@@ -3,7 +3,7 @@
 import sqlite3
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from . import cards, epics, night, splitter
@@ -12,8 +12,6 @@ from .auth import current_actor, require
 router = APIRouter(prefix="/api")
 
 CardType = Literal["content", "system", "fix", "chore"]
-Size = Literal["S", "M"]
-Effort = Literal["low", "medium", "high"]
 Status = Literal["backlog", "ready", "building", "verifying", "review", "done", "blocked"]
 
 
@@ -22,8 +20,7 @@ class CardCreate(BaseModel):
 
     title: str = Field(min_length=1)
     type: CardType
-    size: Size
-    effort: Effort | None = None
+    points: int = Field(default=1, ge=1)
     status: Status | None = None
     position: int | None = Field(default=None, ge=1)
     goal: str = ""
@@ -40,8 +37,7 @@ class CardPatch(BaseModel):
 
     title: str | None = Field(default=None, min_length=1)
     type: CardType | None = None
-    size: Size | None = None
-    effort: Effort | None = None
+    points: int | None = Field(default=None, ge=1)
     status: Status | None = None
     position: int | None = Field(default=None, ge=1)
     goal: str | None = None
@@ -137,9 +133,14 @@ def list_cards(
 
 
 @router.get("/cards/next")
-def next_card(actor: str = Depends(current_actor), conn: sqlite3.Connection = Depends(get_conn)):
+def next_card(
+    points: int | None = Query(default=None, ge=0),
+    actor: str = Depends(current_actor),
+    conn: sqlite3.Connection = Depends(get_conn),
+):
+    """`points`: what's left of tonight's budget. Default: the whole night (`pointsPerNight`)."""
     require(actor, "builder")
-    card = cards.next_card(conn)
+    card = cards.next_card(conn, night.get(conn)["pointsPerNight"] if points is None else points)
     return card if card else Response(status_code=204)
 
 

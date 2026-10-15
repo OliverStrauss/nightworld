@@ -8,7 +8,7 @@ reviewer could tell, from evidence alone, whether it's done.
 ```
 Title:    Add bog slimes to meadow-fields
 Type:     content | system | fix | chore
-Size:     S | M          (L is not allowed — split it)
+Points:   1 | 2          (bigger than one night is not allowed — split it)
 Depends:  card-12        (optional)
 
 Goal
@@ -34,7 +34,8 @@ Notes
 - **Every criterion is checkable** by a test, the validator, or a screenshot.
 - **Name the IDs** you want so content stays consistent.
 - **Systems before content.** Don't ask for a shop UI card before the inventory card is merged.
-- **S** ≈ one definition or a small fix. **M** ≈ one new system or a zone with a few parts.
+- **1 point** ≈ one definition or a small fix. **2 points** ≈ one new system or a zone with a
+  few parts. The night shift only starts a card whose points fit in what's left of the night.
 
 ## Statuses on the board
 

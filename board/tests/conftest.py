@@ -39,7 +39,7 @@ def make_card(client):
     """Create a card as oliver and return its JSON."""
 
     def make(**fields):
-        body = {"title": "A card", "type": "content", "size": "S", **fields}
+        body = {"title": "A card", "type": "content", **fields}
         r = client.post("/api/cards", json=body, headers=auth("oliver"))
         assert r.status_code == 201, r.text
         return r.json()

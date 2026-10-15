@@ -9,7 +9,7 @@ import os
 import sqlite3
 from datetime import datetime, timezone
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS schema_version (
@@ -32,8 +32,7 @@ CREATE TABLE IF NOT EXISTS cards (
     id               INTEGER PRIMARY KEY AUTOINCREMENT,
     title            TEXT NOT NULL,
     type             TEXT NOT NULL,
-    size             TEXT NOT NULL,
-    effort           TEXT NOT NULL,
+    points           INTEGER NOT NULL DEFAULT 1,
     epicId           INTEGER REFERENCES epics(id),
     mergedToEpic     INTEGER NOT NULL DEFAULT 0,
     status           TEXT NOT NULL,
@@ -99,8 +98,17 @@ def connect(path: str | None = None) -> sqlite3.Connection:
 
 def init_db(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA)
-    if conn.execute("SELECT COUNT(*) FROM schema_version").fetchone()[0] == 0:
+    row = conn.execute("SELECT version FROM schema_version").fetchone()
+    if row is None:
         conn.execute("INSERT INTO schema_version (version) VALUES (?)", (SCHEMA_VERSION,))
+    elif row[0] < 2:
+        # v2: a card's size and effort became one number, points (old effort: low 1, medium 2, high 4).
+        conn.execute("BEGIN")  # all or nothing: sqlite3 doesn't open a transaction for ALTER on its own
+        conn.execute("ALTER TABLE cards ADD COLUMN points INTEGER NOT NULL DEFAULT 1")
+        conn.execute("UPDATE cards SET points = CASE effort WHEN 'medium' THEN 2 WHEN 'high' THEN 4 ELSE 1 END")
+        conn.execute("ALTER TABLE cards DROP COLUMN size")
+        conn.execute("ALTER TABLE cards DROP COLUMN effort")
+        conn.execute("UPDATE schema_version SET version = 2")
     conn.commit()
 
 

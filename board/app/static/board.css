@@ -117,9 +117,6 @@ main { padding: 0.75rem; }
 
 .chips { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.3rem 0; }
 .chip { font-size: 0.75rem; background: rgba(255, 255, 255, 0.1); border-radius: 999px; padding: 0.1rem 0.5rem; white-space: nowrap; }
-.chip.effort-low { background: color-mix(in srgb, var(--grass) 35%, transparent); }
-.chip.effort-medium { background: color-mix(in srgb, var(--building) 35%, transparent); }
-.chip.effort-high { background: color-mix(in srgb, var(--danger) 40%, transparent); }
 .chip.epic { background: color-mix(in srgb, var(--verifying) 40%, transparent); }
 .chip.pr { background: color-mix(in srgb, var(--ready) 40%, transparent); }
 .chip.fail { background: var(--danger); color: #fff; }

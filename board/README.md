@@ -30,7 +30,7 @@ The API docs (every endpoint, try-it-out) are at <http://127.0.0.1:8787/docs>.
 
 - Mobile-first kanban: columns `backlog`, `ready`, `building`, `verifying`, `review`, `done`,
   `blocked`. Drag to reorder `ready` (top card is built next).
-- Card editor following `docs/task-cards.md` (title, type, size, goal, acceptance criteria list,
+- Card editor following `docs/task-cards.md` (title, type, points, goal, acceptance criteria list,
   notes, depends-on).
 - Card detail shows the PR link, the reviewer's latest notes, comments, and the full activity
   history.
@@ -53,8 +53,7 @@ cookie for `oliver`.
   "id": 42,
   "title": "Add bog slimes to meadow-fields",
   "type": "content",            // content | system | fix | chore
-  "size": "S",                  // S | M
-  "effort": "low",              // low | medium | high (default from size: S → low, M → medium)
+  "points": 2,                  // how big the card is, a whole number ≥ 1 (default 1)
   "epicId": 3,                  // optional; card is built on the epic's branch
   "mergedToEpic": false,        // true once its PR is merged into the epic branch
   "status": "ready",
@@ -77,7 +76,7 @@ cookie for `oliver`.
 | Method | Path | Who | What |
 |---|---|---|---|
 | GET | `/api/cards?status=ready` | all | List cards, ordered by status then position |
-| GET | `/api/cards/next` | builder | Top `ready` card whose dependencies are met. **204** if none. A dependency is met when it's `done`, or when it's in the same epic and `mergedToEpic` is true |
+| GET | `/api/cards/next?points=<left>` | builder | Top `ready` card whose dependencies are met and whose `points` fit in `left` (default: the whole night's `pointsPerNight`). **204** if none. A dependency is met when it's `done`, or when it's in the same epic and `mergedToEpic` is true |
 | GET | `/api/cards/:id` | all | One card |
 | POST | `/api/cards` | oliver, groomer* | Create (groomer may only create in `backlog`) |
 | PATCH | `/api/cards/:id` | oliver, builder* | Edit fields / status / position (builder may only set `status: verifying`, `prUrl` and `mergedToEpic`) |
@@ -109,16 +108,15 @@ cookie for `oliver`.
 }
 ```
 
-## Effort and the night budget
+## Points and the night budget
 
-| Effort | Points |
-|---|---|
-| low | 1 |
-| medium | 2 |
-| high | 4 |
+Every card has `points`; Oliver sets `pointsPerNight`. A card is only built if its points fit in
+what's left of the night, never rounding up: with 5 points a 2 + 3 night is fine, a 3 + 6 night
+is not. `/api/cards/next?points=<left>` skips cards that don't fit, so a smaller card further down
+can use up the rest. A card bigger than `pointsPerNight` is never picked (the board flags it).
 
-The runner keeps taking `/api/cards/next` until the night's points or `maxCards` run out, or
-`stopTime` passes. When `paused` is true it builds nothing.
+The runner keeps taking `/api/cards/next?points=<left>` until the night's points or `maxCards` run
+out, or `stopTime` passes. When `paused` is true it builds nothing.
 
 ## Review rules (`POST /review`)
 

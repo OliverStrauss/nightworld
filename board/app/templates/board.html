@@ -4,7 +4,7 @@
   {% if night.paused %}
     <span class="pill paused">⏸ Night shift paused</span>
   {% else %}
-    <span class="pill">🌙 Tonight: up to {{ night.maxCards }} cards, stop {{ night.stopTime }}</span>
+    <span class="pill">🌙 Tonight: {{ night.pointsPerNight }} points, up to {{ night.maxCards }} cards, stop {{ night.stopTime }}</span>
   {% endif %}
 </section>
 
