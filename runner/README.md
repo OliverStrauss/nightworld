@@ -1,7 +1,8 @@
 # Nightly runner (Raspberry Pi)
 
 `nightly.sh` is the whole loop: pick a card → builder agent → wait for CI → reviewer agent →
-report. It's a plain bash script so you can read exactly what happens at 2 a.m.
+report, then the next card, while the night's points (Night settings on the board) last. It's a
+plain bash script so you can read exactly what happens at 2 a.m.
 
 ## One-time setup on the Pi
 
@@ -61,4 +62,5 @@ Logs for each run go to `$LOG_DIR/<date_time>/`: `run.log`, `card.txt`, `builder
 ## Pi resources
 
 One Claude Code session uses little CPU; the work happens in the cloud. Unity never runs on the
-Pi. Expect each night to take 30–90 minutes, mostly waiting for CI.
+Pi. Expect each card to take 30–90 minutes, mostly waiting for CI; Night settings on the board cap
+how many cards a night gets.
