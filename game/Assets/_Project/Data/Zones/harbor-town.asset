@@ -60,6 +60,70 @@ MonoBehaviour:
     rotation: {x: 0, y: 0, z: 0}
     scale: {x: 1.5, y: 0.6, z: 1.5}
     snapToGround: 1
+  - name: north-gate
+    prefab: {fileID: 8809991251876945722, guid: 18521a923fbda44d888ebe1c475b87ad, type: 3}
+    placeholder: 0
+    placeholderColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    position: {x: 0, y: -0.05, z: 35}
+    rotation: {x: 0, y: 90, z: 0}
+    scale: {x: 2.4, y: 2.4, z: 2.4}
+    snapToGround: 1
+  - name: north-hedge-west
+    prefab: {fileID: 2940530554659912776, guid: d0f30a1549a9d43fe92db00c157813db, type: 3}
+    placeholder: 0
+    placeholderColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    position: {x: -9.5, y: -0.05, z: 36.35}
+    rotation: {x: 0, y: 90, z: 0}
+    scale: {x: 1.5, y: 1, z: 4}
+    snapToGround: 1
+  - name: north-hedge-east
+    prefab: {fileID: 2940530554659912776, guid: d0f30a1549a9d43fe92db00c157813db, type: 3}
+    placeholder: 0
+    placeholderColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    position: {x: 9.5, y: -0.05, z: 36.35}
+    rotation: {x: 0, y: 90, z: 0}
+    scale: {x: 1.5, y: 1, z: 4}
+    snapToGround: 1
+  - name: gate-lantern-west
+    prefab: {fileID: 6641407458719466402, guid: 4be4b57eaf8574947b423fde67cb8e09, type: 3}
+    placeholder: 0
+    placeholderColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    position: {x: -2.8, y: 0, z: 36.2}
+    rotation: {x: 0, y: 0, z: 0}
+    scale: {x: 0.6, y: 0.6, z: 0.6}
+    snapToGround: 1
+  - name: gate-lantern-east
+    prefab: {fileID: 6641407458719466402, guid: 4be4b57eaf8574947b423fde67cb8e09, type: 3}
+    placeholder: 0
+    placeholderColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    position: {x: 2.8, y: 0, z: 36.2}
+    rotation: {x: 0, y: 0, z: 0}
+    scale: {x: 0.6, y: 0.6, z: 0.6}
+    snapToGround: 1
+  - name: road-north-1
+    prefab: {fileID: 7197089695877111442, guid: eeb53a8b4ab4a4ce29f843a14fd7e779, type: 3}
+    placeholder: 0
+    placeholderColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    position: {x: 0, y: 0.1, z: 7.5}
+    rotation: {x: 0, y: 0, z: 0}
+    scale: {x: 1.5, y: 0.3, z: 4.3333}
+    snapToGround: 1
+  - name: road-north-2
+    prefab: {fileID: 7197089695877111442, guid: eeb53a8b4ab4a4ce29f843a14fd7e779, type: 3}
+    placeholder: 0
+    placeholderColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    position: {x: 0, y: 0.1, z: 20.5}
+    rotation: {x: 0, y: 0, z: 0}
+    scale: {x: 1.5, y: 0.3, z: 4.3333}
+    snapToGround: 1
+  - name: road-north-3
+    prefab: {fileID: 7197089695877111442, guid: eeb53a8b4ab4a4ce29f843a14fd7e779, type: 3}
+    placeholder: 0
+    placeholderColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    position: {x: 0, y: 0.1, z: 33.5}
+    rotation: {x: 0, y: 0, z: 0}
+    scale: {x: 1.5, y: 0.3, z: 4.3333}
+    snapToGround: 1
   enemySpawns: []
   shops:
   - shop: {fileID: 11400000, guid: 07284e92f01c4982b7aea8e6f53da84b, type: 2}
