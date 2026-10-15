@@ -6,7 +6,7 @@ namespace NightWorld.World
 {
     /// <summary>
     /// Lives in the Boot scene. Builds the world from the starting zone's data, spawns the hero
-    /// at the start zone's PlayerSpawn and points the camera at the zone.
+    /// at the start zone's PlayerSpawn and gives it a FollowCamera that drives Camera.main.
     /// Create the Boot scene with the menu item NightWorld → Setup → Create Boot Scene.
     /// </summary>
     public class GameBootstrap : MonoBehaviour
@@ -40,15 +40,6 @@ namespace NightWorld.World
 
             WorldRoot = WorldBuilder.Build(zone);
             SpawnPlayer(zone);
-
-            // Temporary until the player/camera cards land: frame the zone like the first screenshot.
-            var cam = Camera.main;
-            if (cam != null && zone.screenshotPoints.Count > 0)
-            {
-                var point = zone.screenshotPoints[0];
-                cam.transform.position = point.position;
-                cam.transform.LookAt(point.lookAt);
-            }
         }
 
         private void SpawnPlayer(ZoneDefinition zone)
@@ -68,6 +59,7 @@ namespace NightWorld.World
             }
 
             Player = PlayerSpawner.Spawn(marker, settings);
+            Player.gameObject.AddComponent<FollowCamera>();
         }
     }
 }

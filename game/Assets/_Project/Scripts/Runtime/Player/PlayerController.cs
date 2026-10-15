@@ -5,8 +5,9 @@ namespace NightWorld.Player
 {
     /// <summary>
     /// Walks the hero around with a CharacterController. WASD, the arrow keys and the gamepad left
-    /// stick write <see cref="MoveInput"/>; tests set it directly. There is no camera control yet,
-    /// so input (0, 1) walks along world +z. Create the hero with <see cref="PlayerSpawner.Spawn"/>.
+    /// stick write <see cref="MoveInput"/>; tests set it directly. With a <see cref="FollowCamera"/>
+    /// on the hero, input (0, 1) walks away from the camera; without one it walks along world +z.
+    /// Create the hero with <see cref="PlayerSpawner.Spawn"/>.
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
     public class PlayerController : MonoBehaviour
@@ -16,7 +17,8 @@ namespace NightWorld.Player
         [Tooltip("Where the hero goes back to after falling below settings.fallResetY.")]
         public Transform spawnPoint;
 
-        /// <summary>x walks along +x, y along +z. Longer than 1 is clamped to 1.</summary>
+        /// <summary>x walks right, y forward (camera-relative with a FollowCamera, else world +x and +z).
+        /// Longer than 1 is clamped to 1.</summary>
         public Vector2 MoveInput { get; set; }
 
         /// <summary>Downward speed while standing, so isGrounded stays true on flat ground and gentle slopes.</summary>
@@ -62,6 +64,8 @@ namespace NightWorld.Player
 
             Vector2 input = Vector2.ClampMagnitude(MoveInput, 1f);
             var direction = new Vector3(input.x, 0f, input.y);
+            // W walks away from the camera on the XZ plane.
+            if (TryGetComponent(out FollowCamera follow)) direction = Quaternion.Euler(0f, follow.Yaw, 0f) * direction;
 
             if (body.isGrounded && verticalSpeed < 0f) verticalSpeed = GroundedPush;
             verticalSpeed += settings.gravity * Time.deltaTime;

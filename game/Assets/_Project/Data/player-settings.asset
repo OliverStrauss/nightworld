@@ -16,3 +16,10 @@ MonoBehaviour:
   turnSpeed: 720
   gravity: -25
   fallResetY: -20
+  cameraPivotHeight: 1.6
+  cameraDistance: 8
+  cameraStartPitch: 20
+  pitchMin: 5
+  pitchMax: 60
+  orbitSpeed: 180
+  mouseSensitivity: 0.15
