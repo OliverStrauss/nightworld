@@ -2,9 +2,7 @@
   "permissions": {
     "deny": [
       "Edit(game/Assets/ThirdParty/**)",
-      "Write(game/Assets/ThirdParty/**)",
       "Edit(**/*.unity)",
-      "Write(**/*.unity)",
       "Bash(git push --force *)",
       "Bash(git push -f *)",
       "Bash(rm -rf *)"
