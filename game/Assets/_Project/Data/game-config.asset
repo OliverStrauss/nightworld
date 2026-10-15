@@ -1,0 +1,16 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eadf17c36ab34669abd6104190ae2b76, type: 3}
+  m_Name: game-config
+  m_EditorClassIdentifier:
+  startZone: {fileID: 11400000, guid: 9bc606636a0cfba17b86ba7934445773, type: 2}
+  progressionSettings: {fileID: 11400000, guid: 979cd2c74ba2d2026adddc28dd0c094f, type: 2}
