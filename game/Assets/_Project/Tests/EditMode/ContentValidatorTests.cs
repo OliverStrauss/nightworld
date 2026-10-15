@@ -95,6 +95,27 @@ namespace NightWorld.Tests
             AssertHasError(new Definition[] { gel, enemy, town }, "towns must not have enemy spawns");
         }
 
+        [TestCase(-1f)]
+        [TestCase(21f)] // ground is 80 x 40, so half the shorter side is 20
+        public void EdgeBlendOutOfRange_IsError(float edgeBlend)
+        {
+            var zone = Zone("blend-zone");
+            zone.ground.size = new Vector2(80f, 40f);
+            zone.ground.edgeBlend = edgeBlend;
+
+            AssertHasError(new Definition[] { zone }, "edgeBlend");
+        }
+
+        [Test]
+        public void EdgeBlendOfHalfTheShorterSide_HasNoErrors()
+        {
+            var zone = Zone("blend-zone");
+            zone.ground.size = new Vector2(80f, 40f);
+            zone.ground.edgeBlend = 20f;
+
+            Assert.IsEmpty(Errors(new Definition[] { zone }));
+        }
+
         [Test]
         public void TouchingLinkedZones_HaveNoErrors()
         {

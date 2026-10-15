@@ -32,6 +32,8 @@ namespace NightWorld.Data
         public int seed = 1;
         [Tooltip("Distance between ground mesh vertices in metres.")]
         [Min(0.5f)] public float vertexSpacing = 2f;
+        [Tooltip("Hills ease down to height 0 over this many metres before the ground border, so neighbouring zones meet without a step. 0 = no blending.")]
+        [Min(0f)] public float edgeBlend = 0f;
     }
 
     [System.Serializable]
