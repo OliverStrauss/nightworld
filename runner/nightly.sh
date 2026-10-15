@@ -147,6 +147,11 @@ jq -r '.result // empty' "$WORK/builder.json" > "$WORK/builder.txt" 2>/dev/null 
 PR=$(gh pr list --head "$BRANCH" --state open --json number -q '.[0].number' || true)
 if [ -z "$PR" ]; then
   log "No PR was opened."
+  # Notes become the next attempt's "reviewer feedback", so don't pass a crash or rate limit off as one.
+  if [ "$builder_exit" != 0 ] || [ "$(jq -r '.is_error // false' "$WORK/builder.json" 2>/dev/null)" = true ]; then
+    printf 'Runner: the builder did not finish (exit %s), e.g. a session limit or crash. Not a code review; just retry.\n' \
+      "$builder_exit" > "$WORK/builder.txt"
+  fi
   board "$REVIEWER_TOKEN" -X POST "$BOARD_URL/api/cards/$CARD_ID/review" \
     -d "$(jq -n --rawfile n "$WORK/builder.txt" '{verdict: "BLOCKED", notes: ("Builder did not open a PR.\n\n" + $n)}')" >/dev/null || true
   exit 1
