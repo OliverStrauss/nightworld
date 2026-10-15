@@ -1,12 +1,14 @@
 using NightWorld.Data;
 using NightWorld.Player;
+using NightWorld.UI;
 using UnityEngine;
 
 namespace NightWorld.World
 {
     /// <summary>
     /// Lives in the Boot scene. Builds the world from the starting zone's data, spawns the hero
-    /// at the start zone's PlayerSpawn and gives it a FollowCamera that drives Camera.main.
+    /// at the start zone's PlayerSpawn, gives it a FollowCamera that drives Camera.main and shows
+    /// its stats on a Hud.
     /// Create the Boot scene with the menu item NightWorld → Setup → Create Boot Scene.
     /// </summary>
     public class GameBootstrap : MonoBehaviour
@@ -22,6 +24,9 @@ namespace NightWorld.World
 
         /// <summary>The hero, spawned in Start when config has playerSettings and progressionSettings.</summary>
         public PlayerController Player { get; private set; }
+
+        /// <summary>The HUD, created and bound to the hero's PlayerStats right after the hero spawns.</summary>
+        public Hud Hud { get; private set; }
 
         /// <summary>config.startZone when config is set, otherwise the old startZone field.</summary>
         public ZoneDefinition StartZone => config != null ? config.startZone : startZone;
@@ -65,6 +70,9 @@ namespace NightWorld.World
 
             Player = PlayerSpawner.Spawn(marker, settings, config.progressionSettings);
             Player.gameObject.AddComponent<FollowCamera>();
+
+            Hud = new GameObject("Hud").AddComponent<Hud>();
+            Hud.Bind(Player.GetComponent<PlayerStats>());
         }
     }
 }

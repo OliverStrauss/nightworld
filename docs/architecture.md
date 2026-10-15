@@ -48,6 +48,7 @@ code, which would break builds.
 | `Player/` | Movement, camera, input (to be built) |
 | `Combat/` | `Health`, `Enemy` (AI and attacks to be built) |
 | `Progression/` | `ProgressionSettings` (XP curve), `PlayerProgression`, `RewardSystem` (inventory to be built) |
+| `UI/` | `Hud` (HP, level, XP and gold; builds its own uGUI canvas from code) |
 
 Keep systems talking through small interfaces or C# events, not by finding each other with
 `FindObjectOfType`.
