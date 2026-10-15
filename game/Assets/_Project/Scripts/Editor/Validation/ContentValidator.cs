@@ -193,6 +193,10 @@ namespace NightWorld.EditorTools
                 return;
             }
 
+            float maxEdgeBlend = Mathf.Min(g.size.x, g.size.y) * 0.5f;
+            if (g.edgeBlend < 0f || g.edgeBlend > maxEdgeBlend)
+                issues.Add(Error(label, $"ground edgeBlend {g.edgeBlend} must be between 0 and {maxEdgeBlend} (half the shorter ground side)."));
+
             if (zone.levelMin > zone.levelMax) issues.Add(Error(label, $"levelMin ({zone.levelMin}) > levelMax ({zone.levelMax})."));
             if (!ZoneBuilder.IsInsideGround(g, zone.playerSpawn)) issues.Add(Error(label, "playerSpawn is outside the ground."));
 

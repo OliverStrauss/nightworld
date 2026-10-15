@@ -62,7 +62,11 @@ namespace NightWorld.World
             return root;
         }
 
-        /// <summary>Terrain height (zone-local y) at zone-local x/z. Deterministic per seed.</summary>
+        /// <summary>
+        /// Terrain height (zone-local y) at zone-local x/z. Deterministic per seed.
+        /// With edgeBlend > 0 the height eases (smoothstep) to 0 over the last edgeBlend metres
+        /// before the ground border, so linked zones meet at y = 0 without a step.
+        /// </summary>
         public static float SampleGroundHeight(GroundSettings ground, float x, float z)
         {
             if (ground == null || ground.heightAmplitude <= 0f) return 0f;
@@ -70,7 +74,11 @@ namespace NightWorld.World
             float ox = 1000f + ground.seed * 17.13f;
             float oz = 1000f + ground.seed * 31.71f;
             float n = Mathf.PerlinNoise(x * ground.noiseScale + ox, z * ground.noiseScale + oz);
-            return (n - 0.5f) * 2f * ground.heightAmplitude;
+            float height = (n - 0.5f) * 2f * ground.heightAmplitude;
+            if (ground.edgeBlend <= 0f) return height;
+
+            float distanceToBorder = Mathf.Min(ground.size.x * 0.5f - Mathf.Abs(x), ground.size.y * 0.5f - Mathf.Abs(z));
+            return height * Mathf.SmoothStep(0f, 1f, distanceToBorder / ground.edgeBlend);
         }
 
         /// <summary>Returns position with y = terrain height + yOffset.</summary>
