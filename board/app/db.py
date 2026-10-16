@@ -9,7 +9,7 @@ import os
 import sqlite3
 from datetime import datetime, timezone
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS schema_version (
@@ -77,6 +77,36 @@ CREATE TABLE IF NOT EXISTS settings (
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );
+
+-- v3: one row per night-shift run, with its log and the screenshots CI took (the Tonight page).
+CREATE TABLE IF NOT EXISTS nights (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    status      TEXT NOT NULL DEFAULT 'running',
+    budget      TEXT NOT NULL DEFAULT '{}',
+    host        TEXT NOT NULL DEFAULT '',
+    message     TEXT NOT NULL DEFAULT '',
+    startedAt   TEXT NOT NULL,
+    lastSeenAt  TEXT NOT NULL,
+    finishedAt  TEXT,
+    -- the night.started / night.finished rows in activity: a night's cards are the ones claimed between them
+    fromActivity INTEGER,
+    toActivity   INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS night_log (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    nightId   INTEGER NOT NULL REFERENCES nights(id),
+    line      TEXT NOT NULL,
+    createdAt TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS screenshots (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    nightId   INTEGER REFERENCES nights(id),
+    cardId    INTEGER NOT NULL,
+    name      TEXT NOT NULL,
+    createdAt TEXT NOT NULL
+);
 """
 
 
@@ -109,6 +139,11 @@ def init_db(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE cards DROP COLUMN size")
         conn.execute("ALTER TABLE cards DROP COLUMN effort")
         conn.execute("UPDATE schema_version SET version = 2")
+        conn.commit()
+        row = (2,)
+    if row is not None and row[0] < 3:
+        # v3: nights, night_log and screenshots, which SCHEMA above already created.
+        conn.execute("UPDATE schema_version SET version = 3")
     conn.commit()
 
 

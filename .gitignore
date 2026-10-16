@@ -46,6 +46,7 @@ runner/.env
 board/node_modules/
 board/*.db
 board/*.db-*
+board/board-files/
 board/.venv/
 board/*.egg-info/
 board/.env

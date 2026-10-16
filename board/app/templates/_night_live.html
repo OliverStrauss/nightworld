@@ -1,0 +1,40 @@
+<section class="panel night-head" data-running="{{ 'true' if run.status == 'running' else 'false' }}">
+  <h1>🌙 Night {{ run.id }}
+    {% if run.status == "running" and not run.quiet %}<span class="night-state night-running">● live</span>
+    {% elif run.quiet %}<span class="night-state quiet">lost contact</span>
+    {% else %}<span class="night-state night-{{ run.status }}">{{ run.status }}</span>{% endif %}
+  </h1>
+  <p class="muted">
+    Started {{ run.startedAt|when }}{% if run.host %} on {{ run.host }}{% endif %}
+    {% if run.finishedAt %} · ended {{ run.finishedAt|when }}{% else %} · last heard from {{ run.lastSeenAt|ago }}{% endif %}
+    {% if run.budget.pointsPerNight is defined %} · budget {{ run.budget.pointsPerNight }} pts, up to {{ run.budget.maxCards }} cards, stop {{ run.budget.stopTime }}{% endif %}
+  </p>
+  {% if run.quiet %}<p class="error">The runner hasn't said anything for {{ run.lastSeenAt|ago|replace(" ago", "") }}. It may have crashed or lost its network; check the machine it runs on.</p>{% endif %}
+  {% if run.message %}<p class="muted">{{ run.message }}</p>{% endif %}
+</section>
+
+{% for c in night_cards %}
+<section class="panel night-card{{ ' status-' ~ c.status if c.status }}">
+  <h2><a href="/cards/{{ c.id }}">#{{ c.id }} {{ c.title }}</a>
+    {% if c.verdict %}<span class="verdict verdict-{{ c.verdict|lower }}">{{ c.verdict }}</span>{% endif %}</h2>
+  <ol class="steps">
+    {% for s in c.steps %}<li class="step step-{{ s.state }}"><span class="dot"></span>{{ s.label }}</li>{% endfor %}
+  </ol>
+  <p class="muted small">Started {{ c.startedAt|clock }}
+    {% if c.prUrl and c.prUrl.startswith("https://") %} · <a href="{{ c.prUrl }}">Pull request ↗</a>{% endif %}</p>
+  {% if c.shots %}
+  <div class="shots">
+    {% for s in c.shots %}<a href="/shots/{{ s.id }}.png"><img src="/shots/{{ s.id }}.png" alt="{{ s.name }}" loading="lazy"><span>{{ s.name }}</span></a>{% endfor %}
+  </div>
+  {% endif %}
+  {% if c.review %}<details><summary>Reviewer's notes</summary><pre class="review">{{ c.review }}</pre></details>{% endif %}
+</section>
+{% else %}
+<section class="panel"><p class="muted">{{ "No card started yet." if run.status == "running" else "This night didn't build any cards." }}</p></section>
+{% endfor %}
+
+<section class="panel">
+  <h2>Log {% if log_total > log|length %}<span class="muted small">(last {{ log|length }} of {{ log_total }} lines)</span>{% endif %}</h2>
+  <pre class="night-log">{% for l in log %}{{ l.line }}
+{% else %}Nothing logged yet.{% endfor %}</pre>
+</section>

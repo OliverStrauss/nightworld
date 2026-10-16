@@ -7,7 +7,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from . import api, db, ui
+from . import api, db, nights, ui
 
 
 def create_app(db_path: str | None = None) -> FastAPI:
@@ -22,6 +22,7 @@ def create_app(db_path: str | None = None) -> FastAPI:
 
     app = FastAPI(title="NightWorld board", lifespan=lifespan)
     app.state.connect = partial(db.connect, path)
+    app.state.files = nights.files_dir(path)
     app.include_router(api.router)
     app.include_router(ui.router)
     app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")

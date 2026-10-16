@@ -46,8 +46,17 @@ from `brew install coreutils`; without it the run has no time limits. Install th
 ~/nightworld-runner/runner/nightly.sh
 ```
 
-Logs for each run go to `$LOG_DIR/<date_time>/`: `run.log`, `card.txt`, `builder.json`,
-`checks.txt`, `ci/` (downloaded artifacts and screenshots), `review.txt`.
+Logs for each run go to `$LOG_DIR/<date_time>/`: `run.log`, `card.txt`, `builder.jsonl` (everything
+the builder did, one event per line) and `builder.json` (its final result), `checks.txt`, `ci/`
+(downloaded artifacts and screenshots), `review.txt`.
+
+## Watching a night
+
+You don't need to log in to the runner's machine. The runner sends its log to the board every
+15 s, with one line per thing the builder does (files it reads and edits, commands it runs, what
+it says), and uploads CI's zone screenshots. Open **Tonight** on the board
+(`$BOARD_URL/tonight`): which card is building, its steps, the PR, the screenshots and the live
+log. If the board is down the night still runs; it just isn't shown.
 
 ## Safety rails
 

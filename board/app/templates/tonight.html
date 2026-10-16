@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Tonight{% endblock %}
+{% block main %}
+{% if run %}
+<div id="live" data-night="{{ run.id }}" data-running="{{ 'true' if run.status == 'running' else 'false' }}">
+  {% include "_night_live.html" %}
+</div>
+{% else %}
+<section class="panel">
+  <h1>🌙 Tonight</h1>
+  <p class="muted">No night shift has reported in yet. When the runner starts, this page shows which card it's building, every step, and its log as it happens.</p>
+</section>
+{% endif %}
+
+{% if past|length > 1 or (past and not run) %}
+<section class="panel">
+  <h2>Earlier nights</h2>
+  <ul class="log">
+    {% for n in past %}
+    <li><a href="/nights/{{ n.id }}">Night {{ n.id }}</a> <span class="muted">{{ n.startedAt|when }}</span>
+      <span class="night-state night-{{ n.status }}{{ ' quiet' if n.quiet }}">{{ "lost contact" if n.quiet else n.status }}</span>
+      {% if run and n.id == run.id %}<span class="muted">(showing)</span>{% endif %}</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+  // While the night runs, swap in the live part every 5 s. Keep the log pinned to the bottom
+  // unless you've scrolled up to read something.
+  (function () {
+    var live = document.getElementById("live");
+    if (!live) return;
+    function pin(stick) { var log = live.querySelector(".night-log"); if (log && stick) log.scrollTop = log.scrollHeight; }
+    pin(true);
+    if (live.dataset.running !== "true") return;
+    var timer = setInterval(function () {
+      var log = live.querySelector(".night-log");
+      var stick = !log || log.scrollHeight - log.scrollTop - log.clientHeight < 40;
+      fetch("/nights/" + live.dataset.night + "/live", {credentials: "same-origin"})
+        .then(function (r) { return r.ok ? r.text() : null; })
+        .then(function (html) {
+          if (!html) return;
+          var top = log ? log.scrollTop : 0;
+          live.innerHTML = html;
+          var fresh = live.querySelector(".night-log");
+          if (fresh && !stick) fresh.scrollTop = top;
+          pin(stick);
+          if (!live.querySelector("[data-running='true']")) clearInterval(timer);
+        })
+        .catch(function () {});
+    }, 5000);
+  })();
+</script>
+{% endblock %}

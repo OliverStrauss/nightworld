@@ -6,7 +6,8 @@ import pytest
 from app.db import SCHEMA, connect, init_db
 from conftest import auth
 
-ALL_TABLES = {"schema_version", "epics", "cards", "card_deps", "comments", "activity", "settings"}
+ALL_TABLES = {"schema_version", "epics", "cards", "card_deps", "comments", "activity", "settings",
+              "nights", "night_log", "screenshots"}
 
 
 def activity(db_path):
@@ -24,7 +25,7 @@ def test_start_creates_all_tables(client, db_path):
     conn = sqlite3.connect(db_path)
     tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
     assert ALL_TABLES <= tables
-    assert conn.execute("SELECT version FROM schema_version").fetchall() == [(2,)]
+    assert conn.execute("SELECT version FROM schema_version").fetchall() == [(3,)]
 
 
 def test_start_turns_old_size_and_effort_into_points(tmp_path):
@@ -49,7 +50,19 @@ def test_start_turns_old_size_and_effort_into_points(tmp_path):
     ]
     columns = {r["name"] for r in conn.execute("PRAGMA table_info(cards)")}
     assert "points" in columns and not columns & {"size", "effort"}
-    assert conn.execute("SELECT version FROM schema_version").fetchone()[0] == 2
+    assert conn.execute("SELECT version FROM schema_version").fetchone()[0] == 3
+
+
+def test_start_adds_night_tables_to_a_v2_board(tmp_path):
+    path = str(tmp_path / "v2.db")
+    old = sqlite3.connect(path)
+    old.executescript(SCHEMA.split("-- v3:")[0] + "INSERT INTO schema_version VALUES (2);")
+    old.close()
+    conn = connect(path)
+    init_db(conn)
+    tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+    assert {"nights", "night_log", "screenshots"} <= tables
+    assert conn.execute("SELECT version FROM schema_version").fetchone()[0] == 3
 
 
 @pytest.mark.parametrize(

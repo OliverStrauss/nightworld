@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 {% block main %}
 <section class="summary">
+  {% if live %}
+    <a class="pill live{{ ' quiet' if live.quiet }}" href="/tonight">{% if live.quiet %}⚠️ Night shift went quiet {{ live.lastSeenAt|ago }}{% else %}● Night shift running{% if live.doing %}: {{ live.doing }}{% endif %}{% endif %} · watch ▶</a>
+  {% endif %}
   {% if night.paused %}
     <span class="pill paused">⏸ Night shift paused</span>
   {% else %}

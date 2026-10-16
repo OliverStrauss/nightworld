@@ -7,11 +7,11 @@ from pathlib import Path
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import ValidationError
 
-from . import cards, epics, night, splitter
+from . import cards, epics, night, nights, splitter
 from .api import CardCreate, CardPatch, EpicCreate, EpicPatch, NightSettings, get_conn
 from .auth import COOKIE, SESSION_DAYS, check_password, make_session, session_actor
 
@@ -36,6 +36,19 @@ DONE_SHOWN = 20
 templates.env.globals.update(STAGES=STAGES, STAGE_OF=STAGE_OF, STATUS_NAMES=STATUS_NAMES)
 # "2026-10-14T18:45:20Z" → "Oct 14 18:45" (UTC, like the stored timestamps)
 templates.env.filters["when"] = lambda iso: datetime.fromisoformat(iso.replace("Z", "+00:00")).strftime("%b %d %H:%M")
+templates.env.filters["clock"] = lambda iso: datetime.fromisoformat(iso.replace("Z", "+00:00")).strftime("%H:%M:%S")
+
+
+def ago(iso: str) -> str:
+    minutes = nights.minutes_since(iso)
+    if minutes < 1:
+        return "just now"
+    if minutes < 90:
+        return f"{minutes} min ago"
+    return f"{minutes // 60} h ago"
+
+
+templates.env.filters["ago"] = ago
 
 
 def login_required(request: Request) -> str:
@@ -122,7 +135,16 @@ def board(request: Request, actor: str = Depends(login_required), conn: sqlite3.
         epic_slugs={e["id"]: e["slug"] for e in all_epics},
         night=settings,
         next_card=cards.next_card(conn, settings["pointsPerNight"]),
+        live=live_banner(conn),
     )
+
+
+def live_banner(conn) -> dict | None:
+    """The running night, for the banner on the board, or None."""
+    run = nights.latest(conn)
+    if not run or run["status"] != "running":
+        return None
+    return {**run, "doing": nights.now_doing(nights.night_cards(conn, run))}
 
 
 @router.post("/cards/{card_id}/move")
@@ -210,7 +232,7 @@ def card_page(
     deps = [cards.to_json(conn, cards.get_row(conn, d)) for d in card["dependsOn"]]
     epic = epics.to_json(conn, epics.get_row(conn, card["epicId"])) if card["epicId"] else None
     return page(
-        request, "card.html", card=card, deps=deps, epic=epic,
+        request, "card.html", card=card, deps=deps, epic=epic, shots=nights.screenshots(conn, card_id),
         comments=cards.list_comments(conn, card_id),
         activity=list(reversed(cards.list_activity(conn, card_id=card_id))),
     )
@@ -362,3 +384,46 @@ def activity_page(request: Request, actor: str = Depends(login_required), conn: 
     log = list(reversed(cards.list_activity(conn)))[:200]
     titles = {r["id"]: r["title"] for r in conn.execute("SELECT id, title FROM cards")}
     return page(request, "activity.html", activity=log, titles=titles)
+
+
+# ---- the night shift, live
+
+
+def night_context(conn, run: dict | None) -> dict:
+    if run is None:
+        return {"run": None}
+    return {
+        "run": run,
+        "night_cards": nights.night_cards(conn, run),
+        "log": nights.log_tail(conn, run["id"]),
+        "log_total": nights.log_count(conn, run["id"]),
+    }
+
+
+@router.get("/tonight")
+def tonight(request: Request, actor: str = Depends(login_required), conn: sqlite3.Connection = Depends(get_conn)):
+    return page(request, "tonight.html", past=nights.list_nights(conn), **night_context(conn, nights.latest(conn)))
+
+
+@router.get("/nights/{night_id}")
+def night_page(
+    request: Request, night_id: int, actor: str = Depends(login_required), conn: sqlite3.Connection = Depends(get_conn)
+):
+    run = nights.to_json(nights.get_row(conn, night_id))
+    return page(request, "tonight.html", past=nights.list_nights(conn), **night_context(conn, run))
+
+
+@router.get("/nights/{night_id}/live")
+def night_live(
+    request: Request, night_id: int, actor: str = Depends(login_required), conn: sqlite3.Connection = Depends(get_conn)
+):
+    """Just the live part of the page; the Tonight page fetches it every few seconds while it runs."""
+    run = nights.to_json(nights.get_row(conn, night_id))
+    return page(request, "_night_live.html", **night_context(conn, run))
+
+
+@router.get("/shots/{shot_id}.png")
+def screenshot(
+    request: Request, shot_id: int, actor: str = Depends(login_required), conn: sqlite3.Connection = Depends(get_conn)
+):
+    return FileResponse(nights.screenshot_path(conn, request.app.state.files, shot_id), media_type="image/png")

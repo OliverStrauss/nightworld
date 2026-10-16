@@ -35,6 +35,12 @@
     <dt>Branch</dt><dd>{{ card.branch or "—" }}</dd>
     <dt>Pull request</dt><dd>{% if card.prUrl and card.prUrl.startswith("https://") %}<a href="{{ card.prUrl }}">{{ card.prUrl }}</a>{% else %}{{ card.prUrl or "—" }}{% endif %}</dd>
   </dl>
+  {% if shots %}
+  <h2>Screenshots</h2>
+  <div class="shots">
+    {% for s in shots %}<a href="/shots/{{ s.id }}.png"><img src="/shots/{{ s.id }}.png" alt="{{ s.name }}" loading="lazy"><span>{{ s.name }}</span></a>{% endfor %}
+  </div>
+  {% endif %}
   {% if card.lastReview %}<h2>Latest review</h2><pre class="review">{{ card.lastReview }}</pre>{% endif %}
 
   <form class="move" method="post" action="/cards/{{ card.id }}/move">

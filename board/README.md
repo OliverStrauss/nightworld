@@ -141,6 +141,17 @@ cookie for `oliver`.
 | GET | `/api/epics/:id/split` | all | `{state: never | running | done | failed, message}` |
 | GET | `/api/settings/night` | all | `{pointsPerNight, maxCards, stopTime, paused}` |
 | PUT | `/api/settings/night` | oliver | Change night settings |
+| POST | `/api/nights` | builder | `{pointsPerNight, maxCards, stopTime, host}` → a new `running` night (the runner calls this at start) |
+| POST | `/api/nights/:id/log` | builder | `{lines: [...]}` → appends log lines; an empty list is a heartbeat |
+| POST | `/api/nights/:id/finish` | builder | `{status: finished | failed, message}` |
+| GET | `/api/nights`, `/api/nights/:id` | all | Nights, newest first; one night with its cards (steps, verdict, screenshots) and log tail |
+| POST | `/api/cards/:id/screenshots?name=<zone/point.png>&night=<id>` | builder | Raw PNG body (≤ 15 MB), stored under `BOARD_FILES` (default: `board-files/` next to the DB) |
+
+The **Tonight** page (`/tonight`, `/nights/:id`) shows the latest night live: each card's steps
+(Build → PR → CI → Review), PR link, zone screenshots, reviewer notes and the runner's log, refreshed
+every 5 s. A running night that hasn't been heard from for 5 minutes shows "lost contact". The card
+steps come from the activity the runner posts: `card.claimed`, `builder_started`, the PATCH to
+`verifying`, `ci_started`, `ci_passed` / `ci_failed`, `reviewer_started` and `card.reviewed`.
 
 ## Epic
 
