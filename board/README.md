@@ -21,8 +21,57 @@ export BOARD_DB=~/nightworld-board.db              # default: board.db in the cu
 
 Open <http://127.0.0.1:8787> and log in. To try it on your phone, either run uvicorn with
 `--host 0.0.0.0` and open `http://<your-computer's-LAN-IP>:8787` on the same Wi-Fi, or use
-`tailscale serve 8787`. Then "Add to Home Screen". Running it permanently on the Pi is the
-"Deploy" step in PLAN.md.
+`tailscale serve 8787`. Then "Add to Home Screen". To run it permanently, see the next section.
+
+## Run it on the Pi
+
+Needs Raspberry Pi OS Bookworm (12) or newer (Python 3.11+) and a user that can `sudo`.
+The board gets its own clone; don't share the runner's, which is reset every night.
+
+```bash
+sudo apt update && sudo apt install -y git
+git clone https://github.com/OliverStrauss/nightworld.git ~/nightworld-board
+~/nightworld-board/board/deploy/install.sh      # 1st run: creates ~/.config/nightworld/board.env
+nano ~/.config/nightworld/board.env              # fill it in (or use the laptop's, below)
+~/nightworld-board/board/deploy/install.sh      # 2nd run: installs and starts the service
+```
+
+It prints the address, `http://<pi-hostname>.local:8787`. Open it on your phone on the same
+Wi-Fi and "Add to Home Screen". It starts on boot and restarts if it crashes.
+
+**Bringing the laptop's board over** (cards, epics, history, and the same tokens so the runner
+keeps working). After the first `install.sh` run on the Pi, stop the board on the laptop, then on
+the laptop:
+
+```bash
+grep BOARD_DB ~/.config/nightworld/board.env      # where the laptop's database is
+scp ~/.config/nightworld/board.env <pi-user>@<pi-hostname>.local:~/.config/nightworld/board.env
+scp <that-db-path> <pi-user>@<pi-hostname>.local:~/nightworld-board.db
+```
+
+On the Pi, edit `board.env`: set `BOARD_DB=/home/<pi-user>/nightworld-board.db`,
+`BOARD_REPO_DIR=/home/<pi-user>/nightworld-board`, and add `BOARD_HOST=0.0.0.0` and
+`BOARD_PORT=8787` if they're missing. Then run `install.sh` again. (install.sh removes any
+`export ` prefixes; systemd reads the file itself.)
+
+**The nightly runner** finds the board through `BOARD_URL` in its `runner.env`: use
+`http://localhost:8787` when the runner is on the Pi too, or `http://<pi-hostname>.local:8787`
+from the laptop. "Split into cards" needs Claude Code installed and signed in for the same user
+on the Pi (see `runner/README.md`).
+
+**Away from home:** set `BOARD_HOST=127.0.0.1`, run `install.sh`, then
+`sudo tailscale serve --bg 8787` and open the Pi's Tailscale address on your phone. Never
+forward the port on your router.
+
+**Backups:** add this with `crontab -e` (every night at 01:30, keeps 14 days in
+`~/nightworld-backups/`):
+
+```
+30 1 * * * $HOME/nightworld-board/board/deploy/backup.sh >> $HOME/nightworld-backups/backup.log 2>&1
+```
+
+**Updating:** `cd ~/nightworld-board && git pull && board/deploy/install.sh`.
+Logs: `journalctl -u nightworld-board -f`. Stop or start: `sudo systemctl stop|start nightworld-board`.
 
 The API docs (every endpoint, try-it-out) are at <http://127.0.0.1:8787/docs>.
 

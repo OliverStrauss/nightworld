@@ -1,0 +1,19 @@
+# systemd unit for the task board. install.sh fills in the @...@ placeholders and copies it to
+# /etc/systemd/system/nightworld-board.service. Edit board.env, not this file, to change settings.
+[Unit]
+Description=NightWorld task board
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=@USER@
+WorkingDirectory=@BOARD_DIR@
+EnvironmentFile=@ENV_FILE@
+# ~/.local/bin is where Claude Code installs itself; "Split into cards" runs `claude`.
+Environment=PATH=@HOME@/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=@BOARD_DIR@/.venv/bin/uvicorn app.main:app --host ${BOARD_HOST} --port ${BOARD_PORT}
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
