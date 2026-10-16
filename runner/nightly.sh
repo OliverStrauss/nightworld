@@ -167,13 +167,17 @@ if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
 else
   git checkout -q -B "$BRANCH" "origin/$BASE"   # -B: a local branch may linger from a run that never pushed
 fi
-for dep_branch in ${STACK[@]+"${STACK[@]}"}; do   # (the +: macOS bash 3.2 with set -u)
-  log "Stacking on $dep_branch (passed review, not merged yet)"
+# Bring the branch up to date: main (a retry may predate cards merged since), or for a stacked
+# card its parents instead, so its PR's diff stays only its own card.
+MERGE_IN=()
+if [ "$BASE" = main ]; then MERGE_IN=(main); fi
+for dep_branch in ${MERGE_IN[@]+"${MERGE_IN[@]}"} ${STACK[@]+"${STACK[@]}"}; do   # (the +: macOS bash 3.2 with set -u)
+  [ "$dep_branch" = main ] || log "Stacking on $dep_branch (passed review, not merged yet)"
   if ! git merge -q --no-edit "origin/$dep_branch"; then
     git merge --abort 2>/dev/null || true
-    log "Couldn't stack on $dep_branch: merge conflict"
-    printf 'Runner: this card needs %s, which conflicts with %s. Merge the cards it needs, then move it back to Ready.\n' \
-      "${STACK[*]}" "$dep_branch" > "$WORK/builder.txt"
+    log "Couldn't merge $dep_branch into $BRANCH: merge conflict"
+    printf 'Runner: %s conflicts with %s on this branch, so the builder could not start. Fix the conflict by hand (or delete the branch to start over), then move the card back to Ready.\n' \
+      "$dep_branch" "$BRANCH" > "$WORK/builder.txt"
     board "$REVIEWER_TOKEN" -X POST "$BOARD_URL/api/cards/$CARD_ID/review" \
       -d "$(jq -n --rawfile n "$WORK/builder.txt" '{verdict: "BLOCKED", notes: $n}')" >/dev/null || true
     return 0
@@ -335,25 +339,29 @@ board "$REVIEWER_TOKEN" -X POST "$BOARD_URL/api/cards/$CARD_ID/review" \
 log "Card $CARD_ID finished. Logs: $WORK"
 }
 
-# Stacked PRs whose parent has merged: bring main in and point them at main, so their diff is
-# only their own card again. A parent that isn't merged yet leaves its PR alone.
+# Stacked PRs whose parent has merged: replay their own commits onto main and point them at main,
+# so their diff is only their own card again. Rebasing, not merging main in, because main has
+# the parent squashed: a merge conflicts whenever the child touched the parent's files.
+# night/* branches belong to the runner, so it may force-push them. A parent that isn't merged
+# yet leaves its PR alone.
 restack() {
   cd "$REPO_DIR"
   git fetch -q origin --prune
   gh label create stacked --color c5def5 --description "Night shift: built on another card's PR" \
     >/dev/null 2>&1 || true
-  local n head base
+  local n head base parent_tip
   while read -r n head base; do
-    if [ "$base" != main ] && [ -z "$(gh pr list --head "$base" --state merged --json number -q '.[0].number' </dev/null)" ]; then
-      continue
-    fi
+    [ "$base" != main ] || { log "PR #$n: stacked but already on main; check it by hand"; continue; }
+    parent_tip=$(gh pr list --head "$base" --state merged --json headRefOid -q '.[0].headRefOid' </dev/null || true)
+    [ -n "$parent_tip" ] || continue   # parent not merged yet
     git checkout -q -B "$head" "origin/$head"
-    if git merge -q --no-edit origin/main </dev/null && git push -q origin "$head" </dev/null; then
+    if git rebase -q --onto origin/main "$parent_tip" </dev/null &&
+       git push -q --force-with-lease="$head:origin/$head" origin "$head" </dev/null; then
       gh pr edit "$n" --base main --remove-label stacked >/dev/null </dev/null || true
       log "PR #$n: the PR it was stacked on is merged, so it's on top of main now"
     else
-      git merge --abort 2>/dev/null || true
-      log "PR #$n: couldn't bring main into $head (merge conflict); left it stacked on $base"
+      git rebase --abort 2>/dev/null || true
+      log "PR #$n: couldn't move $head onto main (conflict); left it stacked on $base"
     fi
   done < <(gh pr list --label stacked --state open --json number,headRefName,baseRefName \
              -q '.[] | "\(.number) \(.headRefName) \(.baseRefName)"' || true)
