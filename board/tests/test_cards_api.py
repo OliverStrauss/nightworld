@@ -311,6 +311,27 @@ def test_next_picks_card_once_dependencies_are_done(client, make_card):
     assert client.get("/api/cards/next", headers=auth("builder")).json()["title"] == "waits"
 
 
+def test_next_stacks_on_a_dependency_that_passed_review(client, make_card):
+    dep = make_card(title="dep", status="review", branch="night/card-1", prUrl="https://github.com/x/y/pull/1")
+    done = make_card(title="done", status="done", branch="night/card-2")
+    make_card(title="stacked", status="ready", dependsOn=[dep["id"], done["id"]])
+    card = client.get("/api/cards/next", headers=auth("builder")).json()
+    assert card["title"] == "stacked"
+    assert card["stackOn"] == ["night/card-1"]
+
+
+def test_next_has_an_empty_stack_when_dependencies_are_merged(client, make_card):
+    make_card(title="free", status="ready")
+    assert client.get("/api/cards/next", headers=auth("builder")).json()["stackOn"] == []
+
+
+def test_next_still_waits_on_a_dependency_that_is_building(client, make_card):
+    dep = make_card(title="dep", status="ready", branch="night/card-1")
+    make_card(title="waits", status="ready", dependsOn=[dep["id"]], position=2)
+    client.patch(f"/api/cards/{dep['id']}", json={"status": "verifying"}, headers=auth("oliver"))
+    assert client.get("/api/cards/next", headers=auth("builder")).status_code == 204
+
+
 def test_next_only_returns_cards_that_fit_the_points_left(client, make_card):
     make_card(title="three", status="ready", points=3)
     make_card(title="six", status="ready", points=6)
