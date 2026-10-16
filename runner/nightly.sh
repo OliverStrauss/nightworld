@@ -155,11 +155,34 @@ git fetch origin --prune
 git checkout -q main
 git reset -q --hard origin/main
 git clean -qfd
+# Stacked cards: a dependency that passed review but isn't merged yet doesn't stop this card.
+# It's built on top of that card's branch and its PR targets it (restack() moves it to main later).
+STACK=()
+while IFS= read -r dep_branch; do STACK+=("$dep_branch"); done < <(jq -r '.stackOn // [] | .[]' "$RUN/next.json")
+BASE=main
+if [ "${#STACK[@]}" -gt 0 ]; then BASE="${STACK[0]}"; fi
 if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
   log "Continuing existing branch $BRANCH (retry after review feedback)"
   git checkout -q -B "$BRANCH" "origin/$BRANCH"
 else
-  git checkout -q -B "$BRANCH"   # -B: a local branch may linger from a run that never pushed
+  git checkout -q -B "$BRANCH" "origin/$BASE"   # -B: a local branch may linger from a run that never pushed
+fi
+for dep_branch in ${STACK[@]+"${STACK[@]}"}; do   # (the +: macOS bash 3.2 with set -u)
+  log "Stacking on $dep_branch (passed review, not merged yet)"
+  if ! git merge -q --no-edit "origin/$dep_branch"; then
+    git merge --abort 2>/dev/null || true
+    log "Couldn't stack on $dep_branch: merge conflict"
+    printf 'Runner: this card needs %s, which conflicts with %s. Merge the cards it needs, then move it back to Ready.\n' \
+      "${STACK[*]}" "$dep_branch" > "$WORK/builder.txt"
+    board "$REVIEWER_TOKEN" -X POST "$BOARD_URL/api/cards/$CARD_ID/review" \
+      -d "$(jq -n --rawfile n "$WORK/builder.txt" '{verdict: "BLOCKED", notes: $n}')" >/dev/null || true
+    return 0
+  fi
+done
+PR_RULE="Open the PR against main."
+if [ "$BASE" != main ]; then
+  PR_RULE="This card is stacked on $BASE (a card that passed review but isn't merged yet; it's already
+in your branch). Open the PR against it: gh pr create --base $BASE. Change only what this card needs."
 fi
 
 CARD_TEXT=$(jq -r '
@@ -204,6 +227,8 @@ git push -u origin $BRANCH, gh pr create/edit/view/list, python3 tools/check_ass
 python3 tools/new_guid.py, mkdir. No cd, git -C, absolute paths, pipes, ;, && or echo.
 If a command is denied, rephrase it to one of those forms; don't give up.
 
+$PR_RULE
+
 $CARD_TEXT" | tee "$WORK/builder.jsonl" | narrate
 builder_exit=${PIPESTATUS[0]}
 set -e
@@ -225,6 +250,13 @@ if [ -z "$PR" ]; then
 fi
 PR_URL=$(gh pr view "$PR" --json url -q .url)
 log "PR #$PR: $PR_URL"
+if [ "$BASE" != main ]; then
+  labels=" $(gh pr view "$PR" --json labels -q '[.labels[].name] | join(" ")' || true) "
+  gh pr edit "$PR" --base "$BASE" --add-label stacked >/dev/null || log "Couldn't point PR #$PR at $BASE"
+  PARENT=$(gh pr list --head "$BASE" --state open --json number -q '.[0].number' || true)
+  [[ "$labels" == *" stacked "* ]] || gh pr comment "$PR" --body "Stacked on ${PARENT:+#$PARENT }(\`$BASE\`), which passed review but isn't merged yet. Merge that one first; the night shift then moves this PR onto main." >/dev/null || true
+  log "PR #$PR is stacked on $BASE"
+fi
 board "$BUILDER_TOKEN" -X PATCH "$BOARD_URL/api/cards/$CARD_ID" \
   -d "$(jq -n --arg u "$PR_URL" '{status: "verifying", prUrl: $u}')" >/dev/null
 
@@ -276,7 +308,7 @@ timeout 45m claude -p \
     "Bash(git diff *)" "Bash(git log *)" "Bash(git show *)" \
     "Bash(gh pr view *)" "Bash(gh pr diff *)" \
   --output-format text \
-  "Review PR #$PR on branch $BRANCH against main.
+  "Review PR #$PR on branch $BRANCH against $BASE.
 
 Task card:
 $CARD_TEXT
@@ -302,6 +334,33 @@ board "$REVIEWER_TOKEN" -X POST "$BOARD_URL/api/cards/$CARD_ID/review" \
 
 log "Card $CARD_ID finished. Logs: $WORK"
 }
+
+# Stacked PRs whose parent has merged: bring main in and point them at main, so their diff is
+# only their own card again. A parent that isn't merged yet leaves its PR alone.
+restack() {
+  cd "$REPO_DIR"
+  git fetch -q origin --prune
+  gh label create stacked --color c5def5 --description "Night shift: built on another card's PR" \
+    >/dev/null 2>&1 || true
+  local n head base
+  while read -r n head base; do
+    if [ "$base" != main ] && [ -z "$(gh pr list --head "$base" --state merged --json number -q '.[0].number' </dev/null)" ]; then
+      continue
+    fi
+    git checkout -q -B "$head" "origin/$head"
+    if git merge -q --no-edit origin/main </dev/null && git push -q origin "$head" </dev/null; then
+      gh pr edit "$n" --base main --remove-label stacked >/dev/null </dev/null || true
+      log "PR #$n: the PR it was stacked on is merged, so it's on top of main now"
+    else
+      git merge --abort 2>/dev/null || true
+      log "PR #$n: couldn't bring main into $head (merge conflict); left it stacked on $base"
+    fi
+  done < <(gh pr list --label stacked --state open --json number,headRefName,baseRefName \
+             -q '.[] | "\(.number) \(.headRefName) \(.baseRefName)"' || true)
+  git checkout -q main
+  git reset -q --hard origin/main
+}
+restack || log "Restacking failed; carrying on"
 
 TRIED=" "
 while [ "$CARDS_LEFT" -gt 0 ] && [ "$POINTS_LEFT" -gt 0 ] && before_stop; do

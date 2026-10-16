@@ -12,6 +12,23 @@
     {% if card.consecutiveFails %}<span class="chip fail">✗{{ card.consecutiveFails }} in a row</span>{% endif %}
     {% if card.mergedToEpic %}<span class="chip epic">merged into epic</span>{% endif %}
   </p>
+  {# One tap per stage, near the top so it's easy to reach on a phone. A stuck card's Ready button
+     sends it back for another try; a card the night shift is working on can't be moved to Ready. #}
+  <form class="move" method="post" action="/cards/{{ card.id }}/move">
+    <span class="muted">Move to</span>
+    {% for s, name in STAGES %}
+      {% set here = s == STAGE_OF[card.status] and card.status != "blocked" %}
+      <button name="status" value="{{ s }}" class="{{ 'here' if here else ('retry' if s == 'ready' and card.status == 'blocked' else 'ghost') }}" {{ "disabled" if here }}>
+        {%- if s == "ready" and card.status == "blocked" %}↻ Back to Ready{% else %}{{ name }}{% endif -%}
+      </button>
+    {% endfor %}
+  </form>
+  {% if card.status == "ready" %}
+  <form class="move" method="post" action="/cards/{{ card.id }}/move">
+    <input type="hidden" name="top" value="1">
+    <button name="status" value="ready" class="ghost">⬆ Build this next</button>
+  </form>
+  {% endif %}
   <div class="actions">
     <a class="button ghost" href="/cards/{{ card.id }}/edit">✏️ Edit</a>
     <form method="post" action="/cards/{{ card.id }}/delete" onsubmit="return confirm('Delete “{{ card.title|e }}”? This can’t be undone.')">
@@ -42,15 +59,6 @@
   </div>
   {% endif %}
   {% if card.lastReview %}<h2>Latest review</h2><pre class="review">{{ card.lastReview }}</pre>{% endif %}
-
-  <form class="move" method="post" action="/cards/{{ card.id }}/move">
-    <label>Move to
-      <select name="status">
-        {% for s, name in STAGES %}<option value="{{ s }}" {{ "selected" if s == STAGE_OF[card.status] }}>{{ name }}</option>{% endfor %}
-      </select>
-    </label>
-    <button>Move</button>
-  </form>
 
   <h2 id="comments">Comments</h2>
   {% for c in comments %}

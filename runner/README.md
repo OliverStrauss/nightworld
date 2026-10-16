@@ -59,6 +59,15 @@ it says), and uploads CI's zone screenshots. Open **Tonight** on the board
 (`$BOARD_URL/tonight`): which card is building, its steps, the PR, the screenshots and the live
 log. If the board is down the night still runs; it just isn't shown.
 
+## Cards that depend on each other (stacked PRs)
+
+A card never waits for you to merge the card it needs. Once that card has passed review, the
+next card is built on top of its branch, and its PR targets that branch (label `stacked`, plus a
+comment naming the PR to merge first). Merge them in order. At the start of each night, the
+runner finds stacked PRs whose parent has merged, merges `main` into them and points them at
+`main`, so their diff shows only their own card again. If a stacked card can't be put on top of
+its parents because they conflict, it's marked Stuck instead.
+
 ## Safety rails
 
 - The builder can only use the tools listed in `nightly.sh` (`--allowedTools`); anything else

@@ -125,7 +125,7 @@ cookie for `oliver`.
 | Method | Path | Who | What |
 |---|---|---|---|
 | GET | `/api/cards?status=ready` | all | List cards, ordered by status then position |
-| GET | `/api/cards/next?points=<left>` | builder | Top `ready` card whose dependencies are met and whose `points` fit in `left` (default: the whole night's `pointsPerNight`). **204** if none. A dependency is met when it's `done`, or when it's in the same epic and `mergedToEpic` is true |
+| GET | `/api/cards/next?points=<left>` | builder | Top `ready` card whose dependencies are met and whose `points` fit in `left` (default: the whole night's `pointsPerNight`). **204** if none. A dependency is met when it's `done`, when it's in the same epic and `mergedToEpic` is true, or when it passed review (`review`, with a branch). The card then comes back with `stackOn`: the branches of those reviewed-but-unmerged dependencies, which the runner builds on top of |
 | GET | `/api/cards/:id` | all | One card |
 | POST | `/api/cards` | oliver, groomer* | Create (groomer may only create in `backlog`) |
 | PATCH | `/api/cards/:id` | oliver, builder* | Edit fields / status / position (builder may only set `status: verifying`, `prUrl` and `mergedToEpic`) |

@@ -67,6 +67,12 @@ gh auth status >/dev/null 2>&1 ||
   gh auth login
   gh auth setup-git"
 git config --global credential.https://github.com.helper >/dev/null || gh auth setup-git
+# A fresh Pi has no git name or email, and then every builder commit fails ("Please tell me who you are").
+[[ -n "$(git config user.name)" && -n "$(git config user.email)" ]] ||
+  die "git doesn't know who to commit as on this Pi. Run these two (the email is your GitHub
+no-reply address, so your real one stays out of the public repo), then this script again:
+  git config --global user.name \"$(gh api user -q '.name // .login')\"
+  git config --global user.email \"$(gh api user -q '"\(.id)+\(.login)@users.noreply.github.com"')\""
 say "Checking that Claude Code works without a terminal"
 # shellcheck source=/dev/null
 if ! (set -a; source "$ENV_FILE"; set +a
