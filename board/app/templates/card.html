@@ -23,6 +23,12 @@
       </button>
     {% endfor %}
   </form>
+  {% if card.status == "ready" %}
+  <form class="move" method="post" action="/cards/{{ card.id }}/move">
+    <input type="hidden" name="top" value="1">
+    <button name="status" value="ready" class="ghost">⬆ Build this next</button>
+  </form>
+  {% endif %}
   <div class="actions">
     <a class="button ghost" href="/cards/{{ card.id }}/edit">✏️ Edit</a>
     <form method="post" action="/cards/{{ card.id }}/delete" onsubmit="return confirm('Delete “{{ card.title|e }}”? This can’t be undone.')">

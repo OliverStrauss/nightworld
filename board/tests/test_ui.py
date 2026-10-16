@@ -320,3 +320,11 @@ def test_card_page_has_one_tap_move_buttons(browser, make_card):
     ready = browser.get("/cards/2").text
     assert re.search(r'<button name="status" value="ready" class="here" disabled>Ready</button>', ready)
     assert re.search(r'<button name="status" value="done" class="ghost"\s*>Done</button>', ready)
+
+
+def test_build_this_next_puts_a_ready_card_on_top(browser, client, make_card):
+    for _ in range(3):
+        make_card(status="ready")
+    assert "Build this next" in browser.get("/cards/3").text
+    browser.post("/cards/3/move", data={"status": "ready", "top": "1"})
+    assert [card(client, i)["position"] for i in (3, 1, 2)] == [1, 2, 3]
