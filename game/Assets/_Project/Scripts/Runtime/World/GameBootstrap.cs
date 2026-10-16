@@ -1,4 +1,5 @@
 using NightWorld.Data;
+using NightWorld.Input;
 using NightWorld.Player;
 using NightWorld.UI;
 using UnityEngine;
@@ -8,7 +9,8 @@ namespace NightWorld.World
     /// <summary>
     /// Lives in the Boot scene. Builds the world from the starting zone's data, spawns the hero
     /// at the start zone's PlayerSpawn, gives it a FollowCamera that drives Camera.main and shows
-    /// its stats on a Hud.
+    /// its stats on a Hud. Owns the one <see cref="GameControls"/>, built from config.controlSettings,
+    /// that the hero and its camera listen to.
     /// Create the Boot scene with the menu item NightWorld → Setup → Create Boot Scene.
     /// </summary>
     public class GameBootstrap : MonoBehaviour
@@ -27,6 +29,10 @@ namespace NightWorld.World
 
         /// <summary>The HUD, created and bound to the hero's PlayerStats right after the hero spawns.</summary>
         public Hud Hud { get; private set; }
+
+        /// <summary>The game's input actions, created and enabled right before the hero spawns;
+        /// null without config.controlSettings. Disposed in OnDestroy.</summary>
+        public GameControls Controls { get; private set; }
 
         /// <summary>config.startZone when config is set, otherwise the old startZone field.</summary>
         public ZoneDefinition StartZone => config != null ? config.startZone : startZone;
@@ -68,11 +74,27 @@ namespace NightWorld.World
                 return;
             }
 
-            Player = PlayerSpawner.Spawn(marker, settings, config.progressionSettings);
-            Player.gameObject.AddComponent<FollowCamera>();
+            if (config.controlSettings != null)
+            {
+                Controls = new GameControls(config.controlSettings);
+                Controls.Enable();
+            }
+            else
+            {
+                Debug.LogWarning("[GameBootstrap] No controlSettings in the GameConfig; the hero spawns but can't be controlled.");
+            }
+
+            Player = PlayerSpawner.Spawn(marker, settings, config.progressionSettings, Controls);
+            Player.gameObject.AddComponent<FollowCamera>().SetControls(Controls);
 
             Hud = new GameObject("Hud").AddComponent<Hud>();
             Hud.Bind(Player.GetComponent<PlayerStats>());
+        }
+
+        private void OnDestroy()
+        {
+            Controls?.Dispose();
+            Controls = null;
         }
     }
 }

@@ -1,12 +1,14 @@
+using NightWorld.Input;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace NightWorld.Player
 {
     /// <summary>
-    /// Walks the hero around with a CharacterController. WASD, the arrow keys and the gamepad left
-    /// stick write <see cref="MoveInput"/>; tests set it directly. With a <see cref="FollowCamera"/>
-    /// on the hero, input (0, 1) walks away from the camera; without one it walks along world +z.
+    /// Walks the hero around with a CharacterController. The Move action of the shared
+    /// <see cref="GameControls"/> (see <see cref="SetControls"/>) writes <see cref="MoveInput"/>;
+    /// without controls, tests set it directly. With a <see cref="FollowCamera"/> on the hero,
+    /// input (0, 1) walks away from the camera; without one it walks along world +z.
     /// Create the hero with <see cref="PlayerSpawner.Spawn"/>.
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
@@ -21,40 +23,41 @@ namespace NightWorld.Player
         /// Longer than 1 is clamped to 1.</summary>
         public Vector2 MoveInput { get; set; }
 
+        /// <summary>The shared controls this hero listens to, or null (tests drive MoveInput by hand).</summary>
+        public GameControls Controls { get; private set; }
+
         /// <summary>Downward speed while standing, so isGrounded stays true on flat ground and gentle slopes.</summary>
         private const float GroundedPush = -2f;
 
         private CharacterController body;
-        private InputAction moveAction;
         private float verticalSpeed;
 
         private void Awake()
         {
             body = GetComponent<CharacterController>();
-
-            moveAction = new InputAction("Move", InputActionType.Value, expectedControlType: "Vector2");
-            moveAction.AddCompositeBinding("2DVector")
-                .With("Up", "<Keyboard>/w")
-                .With("Down", "<Keyboard>/s")
-                .With("Left", "<Keyboard>/a")
-                .With("Right", "<Keyboard>/d");
-            moveAction.AddCompositeBinding("2DVector")
-                .With("Up", "<Keyboard>/upArrow")
-                .With("Down", "<Keyboard>/downArrow")
-                .With("Left", "<Keyboard>/leftArrow")
-                .With("Right", "<Keyboard>/rightArrow");
-            moveAction.AddBinding("<Gamepad>/leftStick");
-
-            // Callbacks only fire when a device changes, so a MoveInput set by a test isn't overwritten.
-            moveAction.performed += OnMove;
-            moveAction.canceled += OnMove;
         }
 
-        private void OnEnable() => moveAction.Enable();
+        /// <summary>Listens to <paramref name="controls"/>' Move action instead of the previous controls (null = none).
+        /// Whoever created the controls enables and disposes them.</summary>
+        public void SetControls(GameControls controls)
+        {
+            if (Controls != null)
+            {
+                Controls.Move.performed -= OnMove;
+                Controls.Move.canceled -= OnMove;
+            }
 
-        private void OnDisable() => moveAction.Disable();
+            Controls = controls;
 
-        private void OnDestroy() => moveAction?.Dispose();
+            // Callbacks only fire when a device changes, so a MoveInput set by a test isn't overwritten.
+            if (Controls != null)
+            {
+                Controls.Move.performed += OnMove;
+                Controls.Move.canceled += OnMove;
+            }
+        }
+
+        private void OnDestroy() => SetControls(null);
 
         private void OnMove(InputAction.CallbackContext context) => MoveInput = context.ReadValue<Vector2>();
 
