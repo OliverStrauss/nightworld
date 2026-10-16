@@ -192,9 +192,11 @@ def update_card(conn: sqlite3.Connection, actor: str, card_id: int, changes: dic
 def next_card(conn: sqlite3.Connection, points_left: int) -> dict | None:
     """Top `ready` card whose dependencies are all met and whose points fit in `points_left`.
 
-    A dependency is met when it's `done`, or when it's in the same epic and its PR has been
-    merged into the epic branch (`mergedToEpic`). A card that doesn't fit is skipped, like one
-    that's waiting on a dependency, so a smaller card further down can use up the night.
+    A dependency is met when it's `done`, when it's in the same epic and its PR has been merged
+    into the epic branch (`mergedToEpic`), or when it passed review (`review`) and has a branch:
+    then the card is stacked, built on top of that branch instead of waiting for Oliver to merge
+    it. `stackOn` lists those branches. A card that doesn't fit is skipped, like one that's
+    waiting on a dependency, so a smaller card further down can use up the night.
     """
     row = conn.execute(
         """SELECT * FROM cards c
@@ -204,12 +206,26 @@ def next_card(conn: sqlite3.Connection, points_left: int) -> dict | None:
                SELECT 1 FROM card_deps d JOIN cards dep ON dep.id = d.dependsOn
                WHERE d.cardId = c.id
                  AND dep.status != 'done'
+                 AND NOT (dep.status = 'review' AND dep.branch IS NOT NULL)
                  AND NOT (dep.mergedToEpic = 1 AND dep.epicId IS NOT NULL AND dep.epicId IS c.epicId))
            ORDER BY c.position
            LIMIT 1""",
         (points_left,),
     ).fetchone()
-    return to_json(conn, row) if row else None
+    if row is None:
+        return None
+    card = to_json(conn, row)
+    card["stackOn"] = [
+        r[0]
+        for r in conn.execute(
+            """SELECT dep.branch FROM card_deps d JOIN cards dep ON dep.id = d.dependsOn
+               WHERE d.cardId = ? AND dep.status = 'review' AND dep.branch IS NOT NULL
+                 AND NOT (dep.mergedToEpic = 1 AND dep.epicId IS NOT NULL AND dep.epicId IS ?)
+               ORDER BY dep.id""",
+            (row["id"], row["epicId"]),
+        )
+    ]
+    return card
 
 
 # ---- night shift: claim, review, events, comments
