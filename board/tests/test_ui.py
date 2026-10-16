@@ -310,3 +310,13 @@ def test_all_to_ready_moves_an_epics_backlog_in_build_order(browser, client, mak
     ready = client.get("/api/cards?status=ready", headers=auth("oliver")).json()
     assert [c["title"] for c in ready] == ["Already ready", "Walk", "Run"]
     assert [c["title"] for c in client.get("/api/cards?status=backlog", headers=auth("oliver")).json()] == ["Loose idea"]
+
+
+def test_card_page_has_one_tap_move_buttons(browser, make_card):
+    make_card(status="blocked")
+    make_card(status="ready")
+    stuck = browser.get("/cards/1").text
+    assert re.search(r'<button name="status" value="ready" class="retry"\s*>↻ Back to Ready</button>', stuck)
+    ready = browser.get("/cards/2").text
+    assert re.search(r'<button name="status" value="ready" class="here" disabled>Ready</button>', ready)
+    assert re.search(r'<button name="status" value="done" class="ghost"\s*>Done</button>', ready)

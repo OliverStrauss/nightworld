@@ -157,8 +157,12 @@ button, .button {
   padding: 0.6rem 1.2rem; text-decoration: none; margin-top: 0.4rem;
 }
 .button.ghost { background: transparent; color: var(--text); border: 1px solid var(--panel-2); }
-.move { display: flex; gap: 0.5rem; align-items: end; margin-top: 1rem; }
-.move label { flex: 1; margin: 0; }
+.move { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 0.5rem 0 1rem; }
+.move button { flex: 1 1 6rem; min-height: 44px; margin: 0; }
+.move button.ghost { background: transparent; color: var(--text); border: 1px solid var(--panel-2); }
+.move button.here { opacity: 0.6; }
+.move button.retry { order: -1; flex-basis: 100%; }
+.move .muted { flex-basis: 100%; }
 .actions { display: flex; gap: 0.5rem; align-items: center; }
 .login { max-width: 380px; margin-top: 15vh; text-align: center; }
 .login label { text-align: left; }
