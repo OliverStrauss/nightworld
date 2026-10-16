@@ -54,6 +54,7 @@ namespace NightWorld.Tests
             yield return null; // Start()
 
             created.Add(bootstrap.WorldRoot);
+            if (bootstrap.Hud != null) created.Add(bootstrap.Hud.gameObject);
             var player = bootstrap.Player;
             Assert.IsNotNull(player, "GameBootstrap spawned no player");
             created.Add(player.gameObject);
