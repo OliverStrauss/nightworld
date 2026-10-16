@@ -1,0 +1,19 @@
+# systemd unit for the night shift. install.sh fills in the @...@ placeholders and copies it to
+# /etc/systemd/system/nightworld-night.service. The timer starts it; edit runner.env, not this file.
+[Unit]
+Description=NightWorld night shift (runner/nightly.sh)
+After=network-online.target nightworld-board.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=@USER@
+WorkingDirectory=@HOME@
+# ~/.local/bin is where Claude Code installs itself.
+Environment=PATH=@HOME@/.local/bin:/usr/local/bin:/usr/bin:/bin
+Environment=NIGHTWORLD_ENV=@ENV_FILE@
+ExecStart=@RUNNER@
+# nightly.sh has its own per-step timeouts and stops at the board's stop time; this is a backstop.
+TimeoutStartSec=14h
+# Stopping it (systemctl stop nightworld-night) ends the builder/reviewer too.
+KillMode=control-group

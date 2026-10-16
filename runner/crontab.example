@@ -1,3 +1,6 @@
+# install.sh sets up a systemd timer instead (see README.md). Use cron only if you prefer it,
+# and then not both, or two runs get started (the lock makes the second one exit).
+#
 # Install with:  crontab -e   and paste the lines below (edit the paths).
 # Times are in the Pi's local time zone. Check it with `timedatectl`; set it with
 #   sudo timedatectl set-timezone America/Chicago

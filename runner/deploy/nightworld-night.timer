@@ -1,0 +1,12 @@
+# Starts nightworld-night.service every night at RUN_AT from runner.env (install.sh fills it in).
+# Times are the Pi's local time zone: check with `timedatectl`.
+[Unit]
+Description=Start the NightWorld night shift every night
+
+[Timer]
+OnCalendar=*-*-* @RUN_AT@:00
+# No catch-up run at boot: a Pi that was off at night shouldn't start building in the afternoon.
+Persistent=false
+
+[Install]
+WantedBy=timers.target

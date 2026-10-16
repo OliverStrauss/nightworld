@@ -4,35 +4,36 @@
 report, then the next card, while the night's points (Night settings on the board) last. It's a
 plain bash script so you can read exactly what happens at 2 a.m.
 
-## One-time setup on the Pi
+## Setup on the Pi
+
+Needs 64-bit Raspberry Pi OS. Unity never runs here: CI builds, tests and screenshots every PR,
+so the Pi only needs git, `gh`, `jq` and Claude Code. If the board already runs on this Pi,
+`install.sh` takes the builder and reviewer tokens from its `board.env`.
 
 ```bash
-# Tools
-sudo apt update && sudo apt install -y git git-lfs jq gh
-git lfs install
-
-# Claude Code (native installer), then sign in
-curl -fsSL https://claude.ai/install.sh | bash
-claude auth login
-# For cron, a long-lived token is the most reliable:
-#   claude setup-token    → put CLAUDE_CODE_OAUTH_TOKEN=... in ~/.config/nightworld/runner.env
-
-# GitHub CLI: sign in, and let git push through it
-gh auth login
-gh auth setup-git
-
-# A dedicated clone just for the runner (it gets reset every night, so don't work in it)
-git clone https://github.com/<you>/nightworld.git ~/nightworld-runner
-
-# Config
-mkdir -p ~/.config/nightworld
-cp ~/nightworld-runner/runner/.env.example ~/.config/nightworld/runner.env
-chmod 600 ~/.config/nightworld/runner.env
-nano ~/.config/nightworld/runner.env
-chmod +x ~/nightworld-runner/runner/nightly.sh
+git clone https://github.com/OliverStrauss/nightworld.git ~/nightworld-runner
+~/nightworld-runner/runner/deploy/install.sh
 ```
 
-Then add the cron line from `crontab.example` (pointing at `~/nightworld-runner/runner/nightly.sh`).
+If GitHub or Claude Code isn't signed in yet, it stops and prints the command to run
+(`gh auth login` + `gh auth setup-git`, or `~/.local/bin/claude auth login`). Run that, then
+`install.sh` again.
+
+The runner gets its own clone; it's reset to `origin/main` every night, so don't work in it.
+`install.sh` installs any missing tools, writes `~/.config/nightworld/runner.env`, checks both
+sign-ins, and installs a systemd timer that starts `nightly.sh` every night at 02:13 (Pi time;
+check it with `timedatectl`). To change the time, set `RUN_AT=` in `runner.env` and run
+`install.sh` again. Run it again after `git pull` too; it's safe to repeat.
+
+```bash
+sudo systemctl start --no-block nightworld-night   # start a run now
+journalctl -u nightworld-night -f                  # watch it live
+systemctl list-timers nightworld-night.timer       # when the next run is
+sudo systemctl stop nightworld-night               # stop a run (builder and reviewer too)
+```
+
+To skip nights, pause the night shift in the board's Night settings. To turn the timer off:
+`sudo systemctl disable --now nightworld-night.timer`.
 
 ## Running on a Mac instead
 
