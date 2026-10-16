@@ -165,7 +165,8 @@ async def move(
     # and Done on a built card means its PR is merged.
     if not (form.get("status") == "ready" and current in ("building", "verifying")):
         try:
-            cards.update_card(conn, actor, card_id, CardPatch(status=form.get("status")).model_dump(exclude_unset=True))
+            patch = CardPatch(status=form.get("status"), **({"position": 1} if form.get("top") else {}))
+            cards.update_card(conn, actor, card_id, patch.model_dump(exclude_unset=True))
         except ValidationError:
             pass  # unknown status from a hand-made form: leave the card alone
     return back_to(f"/cards/{card_id}")
