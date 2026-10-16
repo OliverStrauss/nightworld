@@ -15,3 +15,4 @@ MonoBehaviour:
   startZone: {fileID: 11400000, guid: 9bc606636a0cfba17b86ba7934445773, type: 2}
   progressionSettings: {fileID: 11400000, guid: 979cd2c74ba2d2026adddc28dd0c094f, type: 2}
   playerSettings: {fileID: 11400000, guid: 4122d5f9927b42748e23e862ed22339d, type: 2}
+  controlSettings: {fileID: 11400000, guid: 8efeb48bb16840b9acbbf9a839ae3319, type: 2}

@@ -45,7 +45,8 @@ code, which would break builds.
 | `Core/` | `Definition` base class (id + displayName); an ID lookup database is a future card |
 | `Data/` | Definition classes |
 | `World/` | `ZoneBuilder`, `EnemySpawner`, `ShopTrigger`, `GameBootstrap` |
-| `Player/` | Movement, camera, input (to be built) |
+| `Player/` | Movement, camera |
+| `Input/` | `ControlSettings` (default bindings as data), `GameControls` (the `player` action map) |
 | `Combat/` | `Health`, `Enemy` (AI and attacks to be built) |
 | `Progression/` | `ProgressionSettings` (XP curve), `PlayerProgression`, `RewardSystem` (inventory to be built) |
 | `UI/` | `Hud` (HP, level, XP and gold; builds its own uGUI canvas from code) |
