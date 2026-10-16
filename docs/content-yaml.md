@@ -35,6 +35,7 @@ Never reuse or change an existing GUID; every reference to that asset would brea
 | `ZoneDefinition` | `c46237c3d1255c7dc44973e80aaf38dc` |
 | `ProgressionSettings` | `8fdb4a4428ded21f6af0aa55a168ace4` |
 | `PlayerSettings` | `ed6698ab44cf4c73b2a231c1c0468590` |
+| `ControlSettings` | `8e0cf018e959428b80085577264ca94a` |
 
 ```yaml
   m_Script: {fileID: 11500000, guid: <script guid from the table>, type: 3}
@@ -55,7 +56,7 @@ Never reuse or change an existing GUID; every reference to that asset would brea
 
 Enum values: `ItemType` Weapon 0, Armor 1, Consumable 2, Material 3. `Rarity` Common 0,
 Uncommon 1, Rare 2. `ZoneType` Town 0, Enemy 1. `PlaceholderShape` None 0, Cube 1, Sphere 2,
-Capsule 3, Cylinder 4.
+Capsule 3, Cylinder 4. `ControlBindingKind` Path 0, Vector2Composite 1.
 
 ## Checklist before you commit content
 - [ ] `id`, `m_Name` and file name all match, kebab-case

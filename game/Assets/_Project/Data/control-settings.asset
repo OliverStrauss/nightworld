@@ -1,0 +1,72 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e0cf018e959428b80085577264ca94a, type: 3}
+  m_Name: control-settings
+  m_EditorClassIdentifier:
+  move:
+  - kind: 1
+    path:
+    up: <Keyboard>/w
+    down: <Keyboard>/s
+    left: <Keyboard>/a
+    right: <Keyboard>/d
+  - kind: 1
+    path:
+    up: <Keyboard>/upArrow
+    down: <Keyboard>/downArrow
+    left: <Keyboard>/leftArrow
+    right: <Keyboard>/rightArrow
+  - kind: 0
+    path: <Gamepad>/leftStick
+    up:
+    down:
+    left:
+    right:
+  look:
+  - kind: 0
+    path: <Mouse>/delta
+    up:
+    down:
+    left:
+    right:
+  - kind: 0
+    path: <Gamepad>/rightStick
+    up:
+    down:
+    left:
+    right:
+  inventory:
+  - kind: 0
+    path: <Keyboard>/i
+    up:
+    down:
+    left:
+    right:
+  - kind: 0
+    path: <Gamepad>/buttonNorth
+    up:
+    down:
+    left:
+    right:
+  menu:
+  - kind: 0
+    path: <Keyboard>/escape
+    up:
+    down:
+    left:
+    right:
+  - kind: 0
+    path: <Gamepad>/start
+    up:
+    down:
+    left:
+    right:
