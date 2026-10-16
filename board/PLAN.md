@@ -56,6 +56,7 @@ board/
     nightworld-board.service   systemd unit
     board.env.example          tokens, db path, password hash
     backup.sh                  nightly sqlite3 .backup
+    install.sh                 venv + systemd service; rerun after git pull
 ```
 
 Config comes from `~/.config/nightworld/board.env` on the Pi (outside the repo, like the
@@ -126,8 +127,8 @@ Goal: Oliver sees the whole world and taps a zone to see what it holds.
 - [ ] Shows a friendly "no world data yet" page until `world.json` exists
 
 ### Deploy (S, Oliver on the Pi)
-- [ ] `deploy/nightworld-board.service`, `board.env.example`, `backup.sh`, and a "Run it on the Pi" section in README.md
-- [ ] `tailscale serve` instructions for reaching it from the phone
+- [x] `deploy/nightworld-board.service`, `board.env.example`, `backup.sh`, `install.sh`, and a "Run it on the Pi" section in README.md
+- [x] `tailscale serve` instructions for reaching it from the phone
 
 ## Runner changes (separate cards, after phases 2 and 5)
 

@@ -46,6 +46,8 @@ runner/.env
 board/node_modules/
 board/*.db
 board/*.db-*
+board/.venv/
+board/*.egg-info/
 board/.env
 board/.pytest_cache/
 __pycache__/
