@@ -1,4 +1,5 @@
 using NightWorld.Data;
+using NightWorld.Input;
 using NightWorld.Player;
 using NightWorld.Progression;
 using UnityEngine;
@@ -15,5 +16,6 @@ namespace NightWorld.World
         public ZoneDefinition startZone;
         public ProgressionSettings progressionSettings;
         public PlayerSettings playerSettings;
+        public ControlSettings controlSettings;
     }
 }
