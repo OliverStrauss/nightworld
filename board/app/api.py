@@ -6,7 +6,7 @@ from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
-from . import cards, epics, night, splitter
+from . import cards, epics, night, nights, splitter
 from .auth import current_actor, require
 
 router = APIRouter(prefix="/api")
@@ -84,6 +84,28 @@ class NightSettings(BaseModel):
     maxCards: int = Field(ge=0)
     stopTime: str
     paused: bool
+
+
+class NightStart(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    pointsPerNight: int | None = None
+    maxCards: int | None = None
+    stopTime: str | None = None
+    host: str = ""
+
+
+class NightLog(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    lines: list[str] = Field(default=[], max_length=5000)
+
+
+class NightFinish(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    status: Literal["finished", "failed"]
+    message: str = ""
 
 
 class EpicCreate(BaseModel):
@@ -222,6 +244,58 @@ def get_night(actor: str = Depends(current_actor), conn: sqlite3.Connection = De
 def put_night(body: NightSettings, actor: str = Depends(current_actor), conn: sqlite3.Connection = Depends(get_conn)):
     require(actor, "oliver")
     return night.put(conn, actor, body.model_dump())
+
+
+# ---- night-shift runs (the Tonight page)
+
+
+@router.post("/nights", status_code=201)
+def start_night(body: NightStart, actor: str = Depends(current_actor), conn: sqlite3.Connection = Depends(get_conn)):
+    require(actor, "builder")
+    budget = body.model_dump(exclude={"host"}, exclude_none=True)
+    return nights.start(conn, actor, budget, body.host)
+
+
+@router.get("/nights")
+def list_nights(actor: str = Depends(current_actor), conn: sqlite3.Connection = Depends(get_conn)):
+    return nights.list_nights(conn)
+
+
+@router.get("/nights/{night_id}")
+def get_night_run(night_id: int, actor: str = Depends(current_actor), conn: sqlite3.Connection = Depends(get_conn)):
+    night_run = nights.to_json(nights.get_row(conn, night_id))
+    return {**night_run, "cards": nights.night_cards(conn, night_run), "log": nights.log_tail(conn, night_id)}
+
+
+@router.post("/nights/{night_id}/log")
+def night_log(
+    night_id: int, body: NightLog, actor: str = Depends(current_actor), conn: sqlite3.Connection = Depends(get_conn)
+):
+    require(actor, "builder")
+    return nights.append_log(conn, night_id, body.lines)
+
+
+@router.post("/nights/{night_id}/finish")
+def finish_night(
+    night_id: int, body: NightFinish, actor: str = Depends(current_actor), conn: sqlite3.Connection = Depends(get_conn)
+):
+    require(actor, "builder")
+    return nights.finish(conn, actor, night_id, body.status, body.message)
+
+
+@router.post("/cards/{card_id}/screenshots", status_code=201)
+async def upload_screenshot(
+    card_id: int,
+    request: Request,
+    name: str = Query(),
+    night: int | None = Query(default=None),
+    actor: str = Depends(current_actor),
+    conn: sqlite3.Connection = Depends(get_conn),
+):
+    """Raw PNG body. The runner uploads CI's zone screenshots here, named `<zone>/<point>.png`."""
+    require(actor, "builder")
+    data = await request.body()
+    return nights.add_screenshot(conn, request.app.state.files, card_id, night, name, data)
 
 
 @router.get("/epics")
