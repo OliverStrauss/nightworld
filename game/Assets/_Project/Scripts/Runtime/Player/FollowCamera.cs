@@ -29,6 +29,11 @@ namespace NightWorld.Player
         /// <summary>The shared controls this camera listens to, or null (tests drive LookInput by hand).</summary>
         public GameControls Controls { get; private set; }
 
+        /// <summary>True from Start (which locks the cursor) until Menu frees it. The mouse turns the camera
+        /// only while this is true. Tracked here rather than read back from Cursor.lockState, because a
+        /// headless test player can't lock the OS cursor.</summary>
+        public bool CursorLocked { get; private set; }
+
         private PlayerController player;
 
         private void Awake()
@@ -71,10 +76,23 @@ namespace NightWorld.Player
 
         // A callback, not WasPressedThisFrame in LateUpdate: it fires the moment Menu is pressed,
         // whichever input update that happens in.
-        private void OnMenu(InputAction.CallbackContext context)
+        private void OnMenu(InputAction.CallbackContext context) => SetCursorLocked(false);
+
+        private void SetCursorLocked(bool locked)
         {
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
+            CursorLocked = locked;
+            Cursor.lockState = locked ? CursorLockMode.Locked : CursorLockMode.None;
+            Cursor.visible = !locked;
+        }
+
+        /// <summary>How far the camera turns this frame, in degrees (x = yaw, y = pitch up).
+        /// <paramref name="stickRate"/> is a rate: × orbitSpeed × deltaTime. <paramref name="mouseDelta"/> is
+        /// already "this frame": × mouseSensitivity, and only while <paramref name="cursorLocked"/>.</summary>
+        public static Vector2 Turn(Vector2 stickRate, Vector2 mouseDelta, bool cursorLocked, PlayerSettings settings, float deltaTime)
+        {
+            Vector2 turn = stickRate * (settings.orbitSpeed * deltaTime);
+            if (cursorLocked) turn += mouseDelta * settings.mouseSensitivity;
+            return turn;
         }
 
         private static bool IsPointer(InputControl control) => control != null && control.device is Pointer;
@@ -86,8 +104,7 @@ namespace NightWorld.Player
             var settings = player.settings;
             if (settings != null) Pitch = Mathf.Clamp(settings.cameraStartPitch, settings.pitchMin, settings.pitchMax);
 
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
+            SetCursorLocked(true);
         }
 
         private void LateUpdate()
@@ -96,9 +113,9 @@ namespace NightWorld.Player
             if (settings == null) return;
 
             // The stick is a rate, so it scales with frame time; the mouse delta is already "this frame".
-            Vector2 turn = LookInput * (settings.orbitSpeed * Time.deltaTime);
-            if (Controls != null && Cursor.lockState == CursorLockMode.Locked && IsPointer(Controls.Look.activeControl))
-                turn += Controls.Look.ReadValue<Vector2>() * settings.mouseSensitivity;
+            Vector2 mouseDelta = Vector2.zero;
+            if (Controls != null && IsPointer(Controls.Look.activeControl)) mouseDelta = Controls.Look.ReadValue<Vector2>();
+            Vector2 turn = Turn(LookInput, mouseDelta, CursorLocked, settings, Time.deltaTime);
 
             Yaw += turn.x;
             Pitch = Mathf.Clamp(Pitch - turn.y, settings.pitchMin, settings.pitchMax);
