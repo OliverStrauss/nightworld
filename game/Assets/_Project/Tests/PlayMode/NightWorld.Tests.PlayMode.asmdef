@@ -4,6 +4,8 @@
     "references": [
         "NightWorld.Runtime",
         "UnityEngine.UI",
+        "Unity.InputSystem",
+        "Unity.InputSystem.TestFramework",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

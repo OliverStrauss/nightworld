@@ -21,7 +21,7 @@ namespace NightWorld.Input
     {
         public ControlBindingKind kind = ControlBindingKind.Path;
 
-        [Tooltip("Control path for a Path binding, e.g. <Keyboard>/i. Unused by composites.")]
+        [Tooltip("Input System control path for a Path binding, e.g. the I key on the keyboard. Unused by composites.")]
         public string path = "";
 
         [Tooltip("Composite parts. Unused by Path bindings.")]

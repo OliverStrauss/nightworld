@@ -1,5 +1,6 @@
 using System;
 using NightWorld.Data;
+using NightWorld.Input;
 using NightWorld.Progression;
 using NightWorld.World;
 using UnityEngine;
@@ -22,7 +23,9 @@ namespace NightWorld.Player
         /// <summary>Bright blue: it stands out on green grass, and red and purple mean danger.</summary>
         public static readonly Color BodyColor = new Color(0.15f, 0.5f, 1f, 1f);
 
-        public static PlayerController Spawn(Transform spawnMarker, PlayerSettings settings, ProgressionSettings progressionSettings)
+        /// <param name="controls">The shared controls the hero walks with; null = none (tests set MoveInput by hand).</param>
+        public static PlayerController Spawn(Transform spawnMarker, PlayerSettings settings, ProgressionSettings progressionSettings,
+            GameControls controls = null)
         {
             if (spawnMarker == null) throw new ArgumentNullException(nameof(spawnMarker));
             if (settings == null) throw new ArgumentNullException(nameof(settings));
@@ -48,6 +51,7 @@ namespace NightWorld.Player
             var player = go.AddComponent<PlayerController>();
             player.settings = settings;
             player.spawnPoint = spawnMarker;
+            player.SetControls(controls);
 
             go.AddComponent<PlayerStats>().Init(progressionSettings);
             return player;
