@@ -23,6 +23,13 @@ namespace NightWorld.Tests
         public override void Setup()
         {
             base.Setup();
+            // CI runs the editor headless with no focused Game view. By default the Input System then sends
+            // keyboard and mouse events to editor updates, where gameplay actions never see them. These two
+            // settings (reset by the fixture in TearDown) send every virtual device's input to the game.
+            InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
+#if UNITY_EDITOR
+            InputSystem.settings.editorInputBehaviorInPlayMode = InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
+#endif
             keyboard = InputSystem.AddDevice<Keyboard>();
         }
 
@@ -68,14 +75,61 @@ namespace NightWorld.Tests
             follow.SetControls(game);
             yield return null; // FollowCamera.Start locks the cursor
 
-            Cursor.lockState = CursorLockMode.Locked;
-            Assert.AreEqual(CursorLockMode.Locked, Cursor.lockState, "precondition: the cursor should be locked");
+            // FollowCamera's own lock state, not Cursor.lockState: a headless player can't lock the OS cursor.
+            Assert.IsTrue(follow.CursorLocked, "precondition: FollowCamera.Start should lock the cursor");
 
             Press(keyboard.escapeKey);
             yield return null;
 
-            Assert.AreEqual(CursorLockMode.None, Cursor.lockState, "Escape (the Menu action) didn't free the cursor");
-            Assert.IsTrue(Cursor.visible, "the cursor was freed but is still hidden");
+            Assert.IsFalse(follow.CursorLocked, "Escape (the Menu action) didn't free the cursor");
+        }
+
+        [UnityTest]
+        public IEnumerator RightStick_OnLook_SetsLookInput_AsARate()
+        {
+            var gamepad = InputSystem.AddDevice<Gamepad>();
+            var game = MakeControls();
+            var follow = Spawn(game).gameObject.AddComponent<FollowCamera>();
+            follow.SetControls(game);
+            yield return null;
+
+            Set(gamepad.rightStick, new Vector2(1f, 0f));
+
+            Assert.AreEqual(1f, follow.LookInput.x, 0.001f, "the right stick on Look didn't reach FollowCamera.LookInput");
+            Assert.AreEqual(0f, follow.LookInput.y, 0.001f);
+
+            Set(gamepad.rightStick, Vector2.zero);
+
+            Assert.AreEqual(Vector2.zero, follow.LookInput, "letting go of the stick didn't stop the camera");
+        }
+
+        [Test]
+        public void Turn_StickIsARate_ScaledByOrbitSpeedAndDeltaTime()
+        {
+            var settings = MakePlayerSettings();
+            settings.orbitSpeed = 90f;
+
+            Vector2 turn = FollowCamera.Turn(new Vector2(1f, -0.5f), Vector2.zero, true, settings, 0.5f);
+
+            Assert.AreEqual(45f, turn.x, 0.0001f);
+            Assert.AreEqual(-22.5f, turn.y, 0.0001f);
+        }
+
+        [Test]
+        public void Turn_MouseIsPerFrame_ScaledByMouseSensitivity_OnlyWhileTheCursorIsLocked()
+        {
+            var settings = MakePlayerSettings();
+            settings.orbitSpeed = 90f;
+            settings.mouseSensitivity = 0.2f;
+
+            Vector2 locked = FollowCamera.Turn(Vector2.zero, new Vector2(10f, 5f), true, settings, 0.5f);
+            Vector2 lockedOtherFrameTime = FollowCamera.Turn(Vector2.zero, new Vector2(10f, 5f), true, settings, 0.01f);
+            Vector2 unlocked = FollowCamera.Turn(Vector2.zero, new Vector2(10f, 5f), false, settings, 0.5f);
+
+            Assert.AreEqual(2f, locked.x, 0.0001f);
+            Assert.AreEqual(1f, locked.y, 0.0001f);
+            Assert.AreEqual(locked, lockedOtherFrameTime, "a mouse delta must not scale with frame time");
+            Assert.AreEqual(Vector2.zero, unlocked, "the mouse turned the camera while the cursor was free");
         }
 
         [UnityTest]
@@ -153,6 +207,7 @@ namespace NightWorld.Tests
                 left = "<Keyboard>/a",
                 right = "<Keyboard>/d",
             });
+            settings.look.Add(new ControlBinding { path = "<Gamepad>/rightStick" });
             settings.look.Add(new ControlBinding { path = "<Mouse>/delta" });
             settings.menu.Add(new ControlBinding { path = "<Keyboard>/escape" });
             created.Add(settings);
